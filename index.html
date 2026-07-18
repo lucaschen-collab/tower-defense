@@ -99,6 +99,19 @@
   .gbtn:active{transform:scale(.98)}
   .gbtn.lock,.gbtn.poor{opacity:.45;cursor:not-allowed;box-shadow:none}
   .godds{font-size:10.5px;color:var(--dim);text-align:center;margin-top:6px;letter-spacing:1px;line-height:1.6}
+  /* ===== 星際基地 ===== */
+  #metaModal{position:fixed;inset:0;background:rgba(5,8,16,.93);display:none;
+    flex-direction:column;align-items:center;z-index:28;padding:16px}
+  .metaBar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;flex-shrink:0}
+  .metaGems{font-size:16px;font-weight:700;color:#e8c3ff;letter-spacing:1px;
+    text-shadow:0 0 10px rgba(232,195,255,.5)}
+  .metaResult{min-height:22px;font-size:14px;letter-spacing:1px;flex-shrink:0}
+  .metaCard{cursor:default;transition:border-color .15s, box-shadow .15s, opacity .15s}
+  .metaCard.pick{cursor:pointer}
+  .metaCard.pick:hover{border-color:var(--cyan)}
+  .metaCard.locked{opacity:.4;filter:grayscale(.6)}
+  .metaCard.inload{border-color:var(--green)!important;box-shadow:0 0 10px rgba(93,255,157,.3)}
+  .metaCard .dd{margin-bottom:0}
   /* ===== 地圖選擇 ===== */
   #mapModal{position:fixed;inset:0;background:rgba(5,8,16,.93);display:none;
     flex-direction:column;align-items:center;justify-content:center;z-index:28;padding:16px}
@@ -221,6 +234,7 @@
     <div class="stat"><div class="v" id="money">200</div><div class="k">能源</div></div>
     <div class="stat"><div class="v" id="lives">20</div><div class="k">核心</div></div>
     <div class="stat"><div class="v" id="wave">0/20</div><div class="k">波次</div></div>
+    <div class="stat"><div class="v" id="gems" style="color:#e8c3ff">0</div><div class="k">星鑽</div></div>
   </div>
   <div class="ctrl">
     <button class="btn" id="startBtn">▶ 開始波次</button>
@@ -228,6 +242,7 @@
     <button class="mini" id="modeBtn">標準</button>
     <button class="mini" id="speedBtn">速度 ×1</button>
     <button class="mini" id="pauseBtn">暫停</button>
+    <button class="mini" id="metaBtn">✦ 基地</button>
     <button class="mini" id="mapBtn">🗺 地圖</button>
     <button class="mini" id="dexBtn">📖 圖鑑</button>
   </div>
@@ -252,13 +267,29 @@
 
     <div class="card hint">
       ◆ 敵人抵達出口扣核心;擊殺得能源。<br>
-      ◆ 塔可升三級,出售回收 70%。<br>
-      ◆ 每 5 波 BOSS,撐過 20 波獲勝!
+      ◆ 通關賺 ✦ 星鑽:標準 50・困難 100・地獄 150・無盡每波 5。<br>
+      ◆ 到 ✦ 基地花 100 星鑽抽新塔,編隊最多帶 10 座!
     </div>
   </div>
 </div>
 
 <div id="toast"></div>
+<div id="metaModal">
+  <div class="dexBox" style="max-width:840px">
+    <div class="dexHead">
+      <div class="dexTitle">✦ 星 際 基 地</div>
+      <div class="dexSub">標準勝 ✦50・困難 ✦100・地獄 ✦150・無盡每波 ✦5</div>
+      <button class="mini" id="metaClose" style="margin-left:auto">✕ 關閉</button>
+    </div>
+    <div class="metaBar">
+      <span class="metaGems">✦ <b id="metaGemVal">0</b> 星鑽</span>
+      <button class="gbtn" id="metaPullBtn" style="width:auto;margin:0;padding:8px 18px">🎴 抽新塔 ✦100</button>
+      <span class="dexSub">編隊 <b id="loadCnt" style="color:var(--green)">0</b>/10・點擊已解鎖的塔加入/移出編隊</span>
+    </div>
+    <div id="metaResult" class="metaResult"></div>
+    <div class="dexGrid" id="metaGrid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))"></div>
+  </div>
+</div>
 <div id="mapModal">
   <div class="dexBox" style="max-width:780px">
     <div class="dexHead">
@@ -432,6 +463,38 @@ function statLine(s){
 }
 const UP_COST = t => Math.round(TOWER_TYPES[t.type].cost * (t.level===0?0.8:1.4));
 
+/* ================= 難度模式 ================= */
+const DIFFS=[
+  {name:'標準', color:'#39d6ff', hpX:1,   spdX:1,    reward:50,  endless:false},
+  {name:'困難', color:'#ffc857', hpX:1.6, spdX:1.08, reward:100, endless:false},
+  {name:'地獄', color:'#ff3d3d', hpX:2.6, spdX:1.18, reward:150, endless:false},
+  {name:'∞ 無盡', color:'#c69bff', hpX:1, spdX:1,   reward:0,   endless:true},
+];
+
+/* ================= 基地養成(星鑽・解鎖・編隊) ================= */
+const META_PULL_COST=100, LOADOUT_MAX=10;
+const META_START=['arrow','cannon','frost','gen'];
+function loadMeta(){
+  try{
+    const raw=localStorage.getItem('td_meta');
+    if(raw){
+      const m=JSON.parse(raw);
+      if(Array.isArray(m.unlocked)&&Array.isArray(m.loadout)&&typeof m.gems==='number'){
+        m.unlocked=m.unlocked.filter(k=>TOWER_TYPES[k]);
+        for(const k of META_START) if(!m.unlocked.includes(k)) m.unlocked.push(k);
+        m.loadout=m.loadout.filter(k=>m.unlocked.includes(k)&&!TOWER_TYPES[k].hidden).slice(0,LOADOUT_MAX);
+        if(!m.loadout.length) m.loadout=META_START.slice();
+        return m;
+      }
+    }
+  }catch(e){}
+  return {gems:0, unlocked:META_START.slice(), loadout:META_START.slice()};
+}
+function saveMeta(){
+  try{ localStorage.setItem('td_meta', JSON.stringify(META)); }catch(e){}
+}
+const META = loadMeta();
+
 /* ================= 敵人定義 ================= */
 const ENEMY_TYPES = {
   grunt:{hp:34, speed:55, reward:8,  r:9,  color:'#ff5fa8'},
@@ -447,7 +510,7 @@ const G = {
   placing:null, selected:null,
   placingFree:false, placingLevel:0, gachaLock:false, gachaQueue:[],
   waveActive:false, spawnQueue:[], spawnTimer:0,
-  auto:false, autoTimer:0, endless:false,
+  auto:false, autoTimer:0, endless:false, diffIdx:0, runEarned:0,
   speed:1, paused:false, over:false,
   mouse:{x:-99,y:-99},
 };
@@ -455,8 +518,9 @@ const G = {
 /* ================= 波次產生 ================= */
 function buildWave(n){
   const q=[];
-  let hpMul = Math.pow(1.22, n-1);
-  let spdMul = 1, rwMul = 1;
+  const D=DIFFS[G.diffIdx];
+  let hpMul = Math.pow(1.22, n-1)*D.hpX;
+  let spdMul = D.spdX, rwMul = 1;
   if(G.endless && n>20){
     hpMul *= Math.pow(1.09, n-20);          // 血量加速膨脹
     spdMul = Math.min(1.6, 1+(n-20)*0.015); // 移速漸增,上限 +60%
@@ -491,6 +555,8 @@ function updateHUD(){
   $('money').textContent=G.money;
   $('lives').textContent=G.lives;
   $('wave').textContent=G.wave+'/'+(G.endless?'∞':G.maxWave);
+  const ge=document.getElementById('gems');
+  if(ge)ge.textContent=META.gems;
   document.querySelectorAll('.tbtn').forEach(b=>{
     b.classList.toggle('poor', G.money < TOWER_TYPES[b.dataset.type].cost);
   });
@@ -511,22 +577,27 @@ function updateHUD(){
 
 /* ================= 商店 UI ================= */
 const shopEl=$('shop');
-for(const [key,t] of Object.entries(TOWER_TYPES)){
-  if(t.hidden)continue;
-  const b=document.createElement('button');
-  b.className='tbtn'; b.dataset.type=key;
-  b.innerHTML=`<div class="ic" style="color:${t.color}">${t.icon}</div><div class="nm">${t.name}</div><div class="pr">◈ ${t.cost}</div>`;
-  b.onclick=()=>{
-    if(G.gachaLock){toast('請先部署抽到的塔!');return;}
-    if(G.money<t.cost){toast('能源不足');return;}
-    G.placing = (G.placing===key)? null : key;
-    G.placingFree=false; G.placingLevel=0;
-    G.selected=null;
-    document.querySelectorAll('.tbtn').forEach(x=>x.classList.toggle('sel',x.dataset.type===G.placing));
-    showInfo();
-  };
-  shopEl.appendChild(b);
+function buildShop(){
+  shopEl.innerHTML='';
+  for(const key of META.loadout){
+    const t=TOWER_TYPES[key];
+    const b=document.createElement('button');
+    b.className='tbtn'; b.dataset.type=key;
+    b.innerHTML=`<div class="ic" style="color:${t.color}">${t.icon}</div><div class="nm">${t.name}</div><div class="pr">◈ ${t.cost}</div>`;
+    b.onclick=()=>{
+      if(G.gachaLock){toast('請先部署抽到的塔!');return;}
+      if(G.money<t.cost){toast('能源不足');return;}
+      G.placing = (G.placing===key)? null : key;
+      G.placingFree=false; G.placingLevel=0;
+      G.selected=null;
+      document.querySelectorAll('.tbtn').forEach(x=>x.classList.toggle('sel',x.dataset.type===G.placing));
+      showInfo();
+    };
+    shopEl.appendChild(b);
+  }
+  updateHUD();
 }
+buildShop();
 
 /* ================= 抽塔系統 ================= */
 const GACHA_COST=80, GACHA10_COST=720;
@@ -546,8 +617,14 @@ function rollOne(){
     if(r<GACHA_TIERS[i].p){idx=i;break;}
     r-=GACHA_TIERS[i].p;
   }
-  const tier=GACHA_TIERS[idx];
-  const type=tier.types[Math.floor(Math.random()*tier.types.length)];
+  // 池子只含已解鎖的塔;若該稀有度池為空,往低階遞補
+  let tier=null, types=[];
+  for(let i=idx;i>=0;i--){
+    types=GACHA_TIERS[i].types.filter(t=>META.unlocked.includes(t));
+    if(types.length){ tier=GACHA_TIERS[i]; idx=i; break; }
+  }
+  if(!tier){ tier=GACHA_TIERS[0]; types=['arrow']; idx=0; }
+  const type=types[Math.floor(Math.random()*types.length)];
   const level=(type==='void')?0:tier.level; // 奇點塔本身夠強,傳說附贈等級只給雷射/狙擊
   return {type,level,tier,tierIdx:idx};
 }
@@ -690,7 +767,7 @@ function resetGame(idx){
   G.placing=null; G.selected=null; G.placingFree=false; G.placingLevel=0;
   G.gachaLock=false; G.gachaQueue=[]; G.gachaTier=null;
   G.waveActive=false; G.spawnQueue=[]; G.spawnTimer=0;
-  G.autoTimer=G.auto?3:0; G.over=false;
+  G.autoTimer=G.auto?3:0; G.over=false; G.runEarned=0;
   $('overlay').style.display='none';
   $('startBtn').disabled=false; $('startBtn').textContent='▶ 開始波次';
   document.querySelectorAll('.tbtn').forEach(x=>x.classList.remove('sel'));
@@ -760,6 +837,91 @@ function closeMaps(){
     $('pauseBtn').classList.toggle('on',G.paused);
   }
 }
+/* ================= 星際基地(解鎖與編隊) ================= */
+function metaPull(){
+  if(META.gems<META_PULL_COST){toast('星鑽不足,去通關賺 ✦ 吧!');return;}
+  const locked=t=>!META.unlocked.includes(t);
+  // 依機率決定稀有度;若該池已抽空,由高稀有度往下遞補
+  let idx=0, r=Math.random();
+  for(let i=0;i<GACHA_TIERS.length;i++){
+    if(r<GACHA_TIERS[i].p){idx=i;break;}
+    r-=GACHA_TIERS[i].p;
+  }
+  let pool=[];
+  for(const i of [idx,3,2,1,0]){
+    pool=[...new Set(GACHA_TIERS[i].types)].filter(locked);
+    if(pool.length){idx=i;break;}
+  }
+  if(!pool.length){toast('全部塔已解鎖!你是傳說!');return;}
+  META.gems-=META_PULL_COST;
+  const type=pool[Math.floor(Math.random()*pool.length)];
+  META.unlocked.push(type);
+  // 自動編入(隱藏塔除外,編隊未滿時)
+  if(!TOWER_TYPES[type].hidden && META.loadout.length<LOADOUT_MAX) META.loadout.push(type);
+  saveMeta(); buildShop(); buildMeta(); updateHUD();
+  const tier=GACHA_TIERS[idx], def=TOWER_TYPES[type];
+  $('metaResult').innerHTML=`🎉 解鎖!<span style="color:${tier.color}">【${tier.name}】</span>
+    <span style="color:${def.color};text-shadow:0 0 8px ${def.color}">${def.icon} ${def.name}</span>
+    <span class="dexSub">— ${def.desc}</span>`;
+}
+function toggleLoadout(key){
+  const i=META.loadout.indexOf(key);
+  if(i>=0){
+    if(META.loadout.length<=1){toast('至少保留 1 座塔');return;}
+    META.loadout.splice(i,1);
+  }else{
+    if(META.loadout.length>=LOADOUT_MAX){toast('編隊已滿('+LOADOUT_MAX+' 座)');return;}
+    META.loadout.push(key);
+  }
+  saveMeta(); buildShop(); buildMeta();
+  if(G.placing && !G.placingFree && !META.loadout.includes(G.placing)){
+    G.placing=null; showInfo();
+  }
+}
+function buildMeta(){
+  $('metaGemVal').textContent=META.gems;
+  $('loadCnt').textContent=META.loadout.length;
+  $('metaPullBtn').classList.toggle('poor', META.gems<META_PULL_COST);
+  const grid=$('metaGrid'); grid.innerHTML='';
+  for(const [key,def] of Object.entries(TOWER_TYPES)){
+    const un=META.unlocked.includes(key);
+    const inL=META.loadout.includes(key);
+    const card=document.createElement('div');
+    card.className='dexCard metaCard'
+      +(un?'':' locked')
+      +(inL?' inload':'')
+      +((un&&!def.hidden)?' pick':'');
+    if(un)card.style.borderColor=def.color+'55';
+    card.innerHTML= un
+      ? `<div class="dh"><span class="di" style="color:${def.color};text-shadow:0 0 8px ${def.color}">${def.icon}</span>
+           <span class="dn" style="color:${def.color}">${def.name}</span></div>
+         <div class="dd">${def.hidden?'✹ 隱藏塔:場上傳說池限定登場':(inL?'✔ 已編入隊伍':'點擊加入編隊')}</div>`
+      : `<div class="dh"><span class="di" style="color:#3a4a66">🔒</span>
+           <span class="dn" style="color:#5a6a8a">???</span></div>
+         <div class="dd">未解鎖,抽新塔取得</div>`;
+    if(un && !def.hidden) card.onclick=()=>toggleLoadout(key);
+    grid.appendChild(card);
+  }
+}
+function openMeta(){
+  buildMeta();
+  $('metaResult').innerHTML='';
+  G._metaWasPaused=G.paused; G.paused=true;
+  $('metaModal').style.display='flex';
+}
+function closeMeta(){
+  $('metaModal').style.display='none';
+  if(!G.over){
+    G.paused=G._metaWasPaused||false;
+    $('pauseBtn').textContent=G.paused?'繼續':'暫停';
+    $('pauseBtn').classList.toggle('on',G.paused);
+  }
+}
+$('metaBtn').onclick=openMeta;
+$('metaClose').onclick=closeMeta;
+$('metaPullBtn').onclick=metaPull;
+$('metaModal').addEventListener('click',e=>{ if(e.target.id==='metaModal') closeMeta(); });
+
 $('mapBtn').onclick=openMaps;
 $('mapClose').onclick=closeMaps;
 $('mapModal').addEventListener('click',e=>{ if(e.target.id==='mapModal') closeMaps(); });
@@ -850,6 +1012,7 @@ cv.addEventListener('click',e=>{
   showInfo();
 });
 window.addEventListener('keydown',e=>{ if(e.key==='Escape'){
+  if($('metaModal').style.display==='flex'){closeMeta();return;}
   if($('mapModal').style.display==='flex'){closeMaps();return;}
   if($('dexModal').style.display==='flex'){closeDex();return;}
   if(G.gachaLock){toast('抽到的塔必須部署!');return;}
@@ -893,9 +1056,13 @@ $('modeBtn').onclick=function(){
     return;
   }
   modePending=false;
-  G.endless=!G.endless;
-  this.textContent=G.endless?'∞ 無盡':'標準';
-  this.classList.toggle('on',G.endless);
+  G.diffIdx=(G.diffIdx+1)%DIFFS.length;
+  const D=DIFFS[G.diffIdx];
+  G.endless=D.endless;
+  this.textContent=D.name;
+  this.style.color=G.diffIdx?D.color:'';
+  this.style.borderColor=G.diffIdx?D.color:'';
+  toast('模式:'+D.name+(D.reward?'(通關 ✦'+D.reward+')':'(每波 ✦5)'));
   resetGame(curMapIdx);
 };
 $('speedBtn').onclick=function(){
@@ -1156,6 +1323,7 @@ function update(dt){
     const bonus=25+G.wave*5;
     G.money+=bonus;
     toast('第 '+G.wave+' 波防守成功!獎勵 ◈'+bonus);
+    if(G.endless){ META.gems+=5; G.runEarned+=5; saveMeta(); }
     if(!G.endless && G.wave>=G.maxWave){ endGame(true); }
     else{
       $('startBtn').disabled=false;
@@ -1215,12 +1383,20 @@ function fxRing(x,y,color,r=26){ G.fx.push({kind:'ring',x,y,color,life:.35,max:.
 
 function endGame(win){
   G.over=true;
+  let earned=0;
+  if(win && !G.endless){
+    earned=DIFFS[G.diffIdx].reward;
+    META.gems+=earned; saveMeta();
+  }
+  if(G.endless) earned=G.runEarned;
   const ov=$('overlay');
   $('ovTitle').textContent=win?'防 線 守 住 了':'核 心 淪 陷';
   $('ovTitle').style.color=win?'var(--green)':'var(--magenta)';
   $('ovDetail').textContent=win
-    ? '你成功抵擋了全部 '+G.maxWave+' 波進攻!'
-    : (G.endless ? '無盡模式:你堅守到了第 '+G.wave+' 波!' : '防線在第 '+G.wave+' 波被突破…');
+    ? '【'+DIFFS[G.diffIdx].name+'】全 '+G.maxWave+' 波通關!獲得 ✦'+earned+' 星鑽,快去基地抽新塔!'
+    : (G.endless ? '無盡模式:堅守 '+G.wave+' 波!累積獲得 ✦'+earned+' 星鑽'
+                 : '防線在第 '+G.wave+' 波被突破…(通關才能獲得星鑽)');
+  updateHUD();
   ov.style.display='flex';
 }
 
