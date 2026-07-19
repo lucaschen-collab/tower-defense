@@ -101,9 +101,35 @@
   .gbtn:active{transform:scale(.98)}
   .gbtn.lock,.gbtn.poor{opacity:.45;cursor:not-allowed;box-shadow:none}
   .godds{font-size:10.5px;color:var(--dim);text-align:center;margin-top:6px;letter-spacing:1px;line-height:1.6}
+  /* ===== 增益卡與主動技能 ===== */
+  #perkModal{position:fixed;inset:0;background:rgba(5,8,16,.9);display:none;
+    flex-direction:column;align-items:center;justify-content:center;z-index:29;padding:16px}
+  #skillBar{position:fixed;left:12px;bottom:12px;z-index:24;display:flex;gap:8px}
+  .skbtn{
+    width:48px;height:48px;border-radius:12px;position:relative;
+    background:linear-gradient(135deg,#1a2a4a,#101c34);border:1.5px solid var(--line);
+    color:var(--text);font-size:20px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .skbtn:hover{border-color:var(--cyan)}
+  .skbtn.aim{border-color:var(--amber);box-shadow:0 0 14px rgba(255,200,87,.6);animation:aimpulse 1s infinite}
+  @keyframes aimpulse{50%{transform:scale(1.08)}}
+  .skcd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:15px;font-weight:700;color:var(--amber);text-shadow:0 0 6px #000;pointer-events:none}
   /* ===== 每日挑戰 ===== */
   #dailyModal{position:fixed;inset:0;background:rgba(5,8,16,.93);display:none;
     flex-direction:column;align-items:center;justify-content:center;z-index:28;padding:16px}
+  /* ===== 排行榜 ===== */
+  #rankModal{position:fixed;inset:0;background:rgba(5,8,16,.93);display:none;
+    flex-direction:column;align-items:center;z-index:29;padding:16px}
+  /* ===== 成就 ===== */
+  #achModal{position:fixed;inset:0;background:rgba(5,8,16,.93);display:none;
+    flex-direction:column;align-items:center;z-index:29;padding:16px}
+  .achRow{display:flex;align-items:center;gap:10px}
+  .achRow.done{border-color:#ffd76a55!important}
+  .achRow .ai{font-size:22px}
+  .achRow.undone{opacity:.5;filter:grayscale(.5)}
   /* ===== 星際基地 ===== */
   #metaModal{position:fixed;inset:0;background:rgba(5,8,16,.93);display:none;
     flex-direction:column;align-items:center;z-index:28;padding:16px}
@@ -359,6 +385,18 @@
 <button id="shopFab">🏪</button>
 <div id="rotateHint">📱 建議轉「橫向」遊玩,戰場會大很多!<button id="rotateClose">知道了</button></div>
 <div id="toast"></div>
+<div id="perkModal">
+  <div class="dexBox" style="max-width:520px;height:auto;align-items:center">
+    <div class="dexTitle" style="font-size:16px">🃏 戰 術 增 益 ・ 三 選 一</div>
+    <div id="perkCards" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center"></div>
+    <div class="dexSub">選擇一項本場永久增益(每 5 波觸發)</div>
+  </div>
+</div>
+<div id="skillBar">
+  <button class="skbtn" id="sk0" title="隕石轟炸">☄<span class="skcd"></span></button>
+  <button class="skbtn" id="sk1" title="全場冰封">❄<span class="skcd"></span></button>
+  <button class="skbtn" id="sk2" title="緊急能源">🔋<span class="skcd"></span></button>
+</div>
 <div id="dailyModal">
   <div class="dexBox" style="max-width:520px;height:auto">
     <div class="dexHead">
@@ -367,6 +405,26 @@
     </div>
     <div class="card" id="dailyInfo" style="font-size:13px;line-height:2"></div>
     <button class="btn" id="dailyGo" style="max-width:260px;align-self:center"></button>
+  </div>
+</div>
+<div id="rankModal">
+  <div class="dexBox" style="max-width:520px">
+    <div class="dexHead">
+      <div class="dexTitle">🏆 無 盡 排 行 榜</div>
+      <div class="dexSub" id="rankMine"></div>
+      <button class="mini" id="rankClose" style="margin-left:auto">✕ 關閉</button>
+    </div>
+    <div class="dexGrid" id="rankList" style="grid-template-columns:1fr"></div>
+  </div>
+</div>
+<div id="achModal">
+  <div class="dexBox" style="max-width:560px">
+    <div class="dexHead">
+      <div class="dexTitle">🏅 成 就 殿 堂</div>
+      <div class="dexSub" id="achStats"></div>
+      <button class="mini" id="achClose" style="margin-left:auto">✕ 關閉</button>
+    </div>
+    <div class="dexGrid" id="achGrid" style="grid-template-columns:1fr"></div>
   </div>
 </div>
 <div id="metaModal">
@@ -398,7 +456,9 @@
       <span class="metaGems">✦ <b id="metaGemVal">0</b> 星鑽</span>
       <button class="gbtn" id="metaPullBtn" style="width:auto;margin:0;padding:8px 18px">🎴 抽新塔 ✦100</button>
       <span class="dexSub">編隊 <b id="loadCnt" style="color:var(--green)">0</b>/10・點擊已解鎖的塔加入/移出編隊</span>
-      <button class="mini" id="wipeBtn" style="margin-left:auto;color:var(--magenta);border-color:var(--magenta)">🗑 清除存檔</button>
+      <button class="mini" id="rankBtn" style="margin-left:auto;color:#5dff9d;border-color:#5dff9d">🏆 排行</button>
+      <button class="mini" id="achBtn" style="color:#ffd76a;border-color:#ffd76a">🏅 成就</button>
+      <button class="mini" id="wipeBtn" style="color:var(--magenta);border-color:var(--magenta)">🗑 清除存檔</button>
     </div>
     <div id="metaResult" class="metaResult"></div>
     <div class="dexGrid" id="metaGrid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))"></div>
@@ -556,11 +616,22 @@ const TOWER_TYPES = {
   hero:{name:'英雄塔', icon:'♛', cost:350, color:'#ffec8a', code:true,
     lv:[{count:1,uhp:900,dmg:45,rate:.6,respawn:15,heroic:true},{count:1,uhp:1600,dmg:80,rate:.55,respawn:13,heroic:true},{count:1,uhp:2800,dmg:140,rate:.5,respawn:11,heroic:true}],
     desc:'兌換碼限定!召喚一名英雄駐守路上,唯一能阻擋 BOSS 的存在。'},
+  omega:{name:'創世神塔', icon:'❈', cost:500, color:'#ff5edb', code:true,
+    lv:[
+      {dmg:180, range:200, rate:.5, splash:70, chain:4, targets:3, crit:.3, slow:.6, slowT:1.5, dot:60, dotT:3, vuln:.35, vulnT:3, stunC:.25, stunT:.8, execTh:.2, bounty:10, income:20, interval:6},
+      {dmg:320, range:230, rate:.42, splash:85, chain:6, targets:4, crit:.4, slow:.5, slowT:2, dot:120, dotT:3.5, vuln:.5, vulnT:3.5, stunC:.35, stunT:1.1, execTh:.28, bounty:20, income:40, interval:6},
+      {dmg:600, range:265, rate:.35, splash:105, chain:8, targets:6, crit:.55, slow:.4, slowT:2.5, dot:240, dotT:4, vuln:.7, vulnT:4, stunC:.45, stunT:1.5, execTh:.35, bounty:35, income:70, interval:6}
+    ],
+    desc:'代碼限定・究極神塔!多重鎖定齊射,附帶爆炸、連鎖、劇毒、易傷、減速、暈眩、斬殺、賞金,並持續產出能源。'},
   void:{name:'奇點塔', icon:'✹', cost:400, color:'#ff9dff', hidden:true,
     lv:[{dmg:70, range:135, rate:2.4, blast:70, pull:55},{dmg:120, range:150, rate:2.2, blast:80, pull:72},{dmg:200, range:165, rate:2.0, blast:95, pull:92}],
     desc:'抽塔限定!引爆奇點造成範圍傷害,並將敵人沿路徑拖回(BOSS 效果減弱)。'},
 };
 function statLine(s){
+  if(s.targets&&s.dot&&s.execTh) // 創世神塔:全效果摘要
+    return `傷害 ${s.dmg}・射程 ${s.range>900?'全場':s.range}・齊射 ${s.targets} 體・連鎖 ${s.chain}<br>`
+      +`爆炸 ${s.splash}・暴擊 ${Math.round(s.crit*100)}%・斬殺 ${Math.round(s.execTh*100)}%・劇毒 ${s.dot}/s<br>`
+      +`易傷 +${Math.round(s.vuln*100)}%・減速 ${Math.round((1-s.slow)*100)}%・暈眩 ${Math.round(s.stunC*100)}%・賞金 ◈${s.bounty}・產能 ◈${s.income}/${s.interval}s`;
   if(s.income!=null) return `每 ${s.interval} 秒產出 ◈ ${s.income}`;
   if(s.boost!=null) return `增幅範圍 ${s.range} ・ 傷害 +${Math.round(s.boost*100)}%`;
   if(s.field!=null) return `力場範圍 ${s.range} ・ 持續減速 ${Math.round(s.field*100)}%`;
@@ -612,6 +683,10 @@ const EVOS={
   void:[{n:'事件視界',d:'引力與範圍大增',mul:{pull:1.8,blast:1.3}},{n:'湮滅奇點',d:'傷害 ×2.5',mul:{dmg:2.5}}],
   camp:[{n:'聖衛軍團',d:'兵力 HP ×2.5',mul:{uhp:2.5}},{n:'狂戰軍團',d:'攻擊 ×2.2・攻速提升',mul:{dmg:2.2,rate:.6}}],
   hero:[{n:'不滅戰神',d:'英雄 HP ×2.5',mul:{uhp:2.5}},{n:'屠龍者',d:'攻擊 ×2.3・復活加快',mul:{dmg:2.3,respawn:.7}}],
+  omega:[
+    {n:'萬物終焉',d:'傷害 ×2.5・斬殺線 50%',mul:{dmg:2.5},set:{execTh:.5}},
+    {n:'無限審判',d:'齊射 10 目標・攻速倍增・全場射程',mul:{rate:.5},set:{targets:10,chain:12,range:999}}
+  ],
 };
 function buildEvoStats(type,ei){
   const base={...TOWER_TYPES[type].lv[2]};
@@ -622,8 +697,20 @@ function buildEvoStats(type,ei){
     if(base[k]!=null)base[k]=Math.round(base[k]);
   return base;
 }
-// 取得塔的實際數值(進化後用進化數值)
-const statsOf = t => t.es || TOWER_TYPES[t.type].lv[t.level];
+// 取得塔的實際數值(進化後用進化數值,再套用本場增益卡)
+function statsOf(t){
+  const base = t.es || TOWER_TYPES[t.type].lv[t.level];
+  if(!G.modKey) return base;
+  if(t._mk===G.modKey && t._mb===base) return t._ms;
+  const m={...base};
+  if(m.dmg!=null)m.dmg=Math.round(m.dmg*G.mod.dmg);
+  if(m.range!=null&&m.range<900)m.range=Math.round(m.range*G.mod.range);
+  if(m.rate!=null)m.rate=m.rate*G.mod.rate;
+  if(m.income!=null)m.income=Math.round(m.income*G.mod.income);
+  if(m.uhp!=null)m.uhp=Math.round(m.uhp*G.mod.uhp);
+  t._mk=G.modKey; t._mb=base; t._ms=m;
+  return m;
+}
 const fmtNum = n => n>=1e6? (n/1e6).toFixed(1)+'M' : n>=1e3? (n/1e3).toFixed(1)+'K' : Math.round(n);
 
 /* ================= 難度模式 ================= */
@@ -657,6 +744,35 @@ function saveMeta(){
   try{ localStorage.setItem('td_meta', JSON.stringify(META)); }catch(e){}
 }
 const META = loadMeta();
+META.stats=META.stats||{kills:0,dailyWins:0};
+META.ach=META.ach||[];
+META.best=META.best||{endless:0};
+
+/* ================= 成就系統 ================= */
+const ACHS=[
+  {id:'first_win', n:'初次防衛', d:'通關標準模式', gems:30},
+  {id:'hell_win',  n:'地獄歸來', d:'通關地獄模式', gems:100},
+  {id:'kills_1k',  n:'千人斬',   d:'累積擊殺 1000 名敵人', gems:50},
+  {id:'wave_30',   n:'無盡行者', d:'無盡模式撐過 30 波', gems:80},
+  {id:'evo_first', n:'進化之始', d:'首次進化任一座塔', gems:20},
+  {id:'all_towers',n:'全圖鑑大師', d:'解鎖全部 24 種塔', gems:200},
+  {id:'rich',      n:'戰爭財閥', d:'單場能源同時達到 2000', gems:40},
+  {id:'daily_3',   n:'每日修行', d:'完成 3 次每日挑戰', gems:60},
+];
+function unlockAch(id){
+  if(META.ach.includes(id))return;
+  const a=ACHS.find(x=>x.id===id); if(!a)return;
+  META.ach.push(id); META.gems+=a.gems;
+  saveMeta();
+  toast('🏅 成就達成:'+a.n+'(✦'+a.gems+')');
+  if(typeof SFX!=='undefined')SFX.sparkle();
+  updateHUD();
+}
+function checkAchs(){
+  if((META.stats.kills||0)>=1000)unlockAch('kills_1k');
+  if(META.unlocked.length>=Object.keys(TOWER_TYPES).length)unlockAch('all_towers');
+  if(G.money>=2000)unlockAch('rich');
+}
 
 /* ================= 敵人定義 ================= */
 const ENEMY_TYPES = {
@@ -664,7 +780,14 @@ const ENEMY_TYPES = {
   fast: {hp:22, speed:100,reward:10, r:7,  color:'#5dff9d', atk:9},
   tank: {hp:120,speed:34, reward:20, r:13, color:'#ffc857', atk:24},
   boss: {hp:900,speed:28, reward:120,r:18, color:'#ff3d3d', atk:80},
+  stealth:{hp:40, speed:70, reward:14, r:8,  color:'#b8c6e8', atk:10, stealth:true},
+  healer: {hp:70, speed:40, reward:18, r:10, color:'#7dffb0', atk:8,  healer:true},
+  splitter:{hp:55,speed:50, reward:16, r:10, color:'#ff8ad4', atk:10, split:true},
+  shield: {hp:75, speed:45, reward:18, r:11, color:'#9ecbff', atk:12, shieldN:4},
+  flyer:  {hp:34, speed:65, reward:15, r:7,  color:'#ffd0ff', atk:0,  fly:true},
 };
+// 能鎖定隱形怪的塔(其他塔的範圍波及仍可誤傷)
+const SEES_STEALTH={sniper:1,laser:1,storm:1,tesla:1,exec:1};
 
 /* ================= 音效引擎(Web Audio 合成) ================= */
 const SFX={
@@ -742,6 +865,8 @@ const G = {
   placingFree:false, placingLevel:0, gachaLock:false, gachaQueue:[],
   waveActive:false, spawnQueue:[], spawnTimer:0,
   auto:false, autoTimer:0, endless:false, diffIdx:0, runEarned:0,
+  mod:{dmg:1,range:1,rate:1,income:1,uhp:1,reward:1}, modKey:0, perksTaken:[],
+  skills:[{cd:0,max:45},{cd:0,max:60},{cd:0,max:90}], aiming:false,
   speed:1, paused:false, over:false,
   mouse:{x:-99,y:-99},
 };
@@ -766,6 +891,11 @@ function buildWave(n){
     push('grunt', 6+n*2, .62);
     if(n>=2) push('fast', 3+n, .42);
     if(n>=4) push('tank', Math.floor(n/2), 1.1);
+    if(n>=6) push('stealth', 2+Math.floor(n/3), .55);
+    if(n>=7) push('splitter', 1+Math.floor(n/4), .8);
+    if(n>=8) push('shield', 1+Math.floor(n/4), .9);
+    if(n>=9) push('healer', 1+Math.floor(n/5), 1.3);
+    if(n>=10) push('flyer', 2+Math.floor(n/4), .6);
   }
   // 無盡模式:20 波後追加精英混編
   if(G.endless && n>20){
@@ -789,6 +919,7 @@ function updateHUD(){
   $('wave').textContent=G.wave+'/'+(G.endless?'∞':G.maxWave);
   const ge=document.getElementById('gems');
   if(ge)ge.textContent=META.gems;
+  if(G.money>=2000)unlockAch('rich');
   document.querySelectorAll('.tbtn').forEach(b=>{
     b.classList.toggle('poor', G.money < TOWER_TYPES[b.dataset.type].cost);
   });
@@ -1008,6 +1139,9 @@ function resetGame(idx){
   G.gachaLock=false; G.gachaQueue=[]; G.gachaTier=null;
   G.waveActive=false; G.spawnQueue=[]; G.spawnTimer=0;
   G.autoTimer=G.auto?3:0; G.over=false; G.runEarned=0;
+  G.mod={dmg:1,range:1,rate:1,income:1,uhp:1,reward:1}; G.modKey=0; G.perksTaken=[];
+  G.skills.forEach(k=>k.cd=0); G.aiming=false;
+  for(const t of G.towers){t._mk=0;t._ms=null;}
   $('overlay').style.display='none';
   $('startBtn').disabled=false; $('startBtn').textContent='▶ 開始波次';
   document.querySelectorAll('.tbtn').forEach(x=>x.classList.remove('sel'));
@@ -1101,7 +1235,7 @@ function metaPull(){
   // 自動編入(隱藏塔除外,編隊未滿時)
   if(!TOWER_TYPES[type].hidden && META.loadout.length<LOADOUT_MAX) META.loadout.push(type);
   saveMeta(); buildShop(); buildMeta(); updateHUD();
-  SFX.sparkle();
+  SFX.sparkle(); checkAchs();
   const tier=GACHA_TIERS[idx], def=TOWER_TYPES[type];
   $('metaResult').innerHTML=`🎉 解鎖!<span style="color:${tier.color}">【${tier.name}】</span>
     <span style="color:${def.color};text-shadow:0 0 8px ${def.color}">${def.icon} ${def.name}</span>
@@ -1168,6 +1302,7 @@ function codeHash(str){
   return (h>>>0).toString(16);
 }
 const REDEEM={
+  '7c785ad6':{t:'omega'},
   '72a25a7d':{t:'hero'},
   'c198ab70':{gems:100},
   '92852349':{gems:300},
@@ -1188,6 +1323,7 @@ $('codeBtn').onclick=()=>{
   }
   if(r.gems){ META.gems+=r.gems; toast('🎉 兌換成功!獲得 ✦'+r.gems+' 星鑽!'); }
   SFX.sparkle(); setTimeout(()=>SFX.win(),250);
+  checkAchs();
   saveMeta(); buildShop(); buildMeta(); updateHUD();
   $('codeInput').value='';
 };
@@ -1273,6 +1409,118 @@ $('logoutBtn').onclick=()=>{
 };
 initGoogle();
 
+/* ================= 雲端排行榜(Firebase Firestore) ================= */
+// ★ 貼上你的 Firebase 設定即啟用雲端排行榜(設定教學見 README),例如:
+// const FIREBASE_CONFIG={apiKey:"AIza...",authDomain:"xxx.firebaseapp.com",projectId:"xxx"};
+const FIREBASE_CONFIG=null;
+const FB={db:null,ready:false,loading:false};
+function fbLoad(src){return new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=src;sc.onload=res;sc.onerror=rej;document.head.appendChild(sc);});}
+function initFirebase(cb){
+  if(!FIREBASE_CONFIG){cb&&cb(false);return;}
+  if(FB.ready){cb&&cb(true);return;}
+  if(FB.loading){setTimeout(()=>initFirebase(cb),600);return;}
+  FB.loading=true;
+  fbLoad('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js')
+    .then(()=>fbLoad('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js'))
+    .then(()=>{
+      firebase.initializeApp(FIREBASE_CONFIG);
+      FB.db=firebase.firestore(); FB.ready=true; FB.loading=false;
+      cb&&cb(true);
+    }).catch(()=>{FB.loading=false;cb&&cb(false);});
+}
+function playerId(){
+  if(META.account)return (META.account.type+'_'+META.account.id).slice(0,60);
+  if(!META.deviceId){META.deviceId='dev_'+Math.random().toString(36).slice(2,11);saveMeta();}
+  return META.deviceId;
+}
+function escapeHtml(t){return String(t).replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));}
+function submitScore(wave){
+  if(!FIREBASE_CONFIG||!wave)return;
+  initFirebase(ok=>{
+    if(!ok)return;
+    const id=playerId();
+    const name=((META.account&&META.account.name)||'匿名指揮官').slice(0,16);
+    const ref=FB.db.collection('scores').doc(id);
+    ref.get().then(snap=>{
+      const prev=snap.exists?(snap.data().wave||0):0;
+      if(wave>prev) ref.set({name,wave,map:MAPS[curMapIdx].name,ts:Date.now()});
+    }).catch(()=>{});
+  });
+}
+function openRank(){
+  G._rankWasPaused=G.paused; G.paused=true;
+  $('rankModal').style.display='flex';
+  $('rankMine').textContent='我的最佳:'+(META.best.endless||0)+' 波';
+  const list=$('rankList');
+  if(!FIREBASE_CONFIG){
+    list.innerHTML=`<div class="dexCard" style="font-size:12.5px;line-height:1.9;color:var(--dim)">
+      ☁️ 雲端排行榜尚未啟用。<br>
+      站長只要建立免費的 Firebase 專案,把設定貼進程式內的
+      <b style="color:var(--cyan)">FIREBASE_CONFIG</b>,全球排行就會在這裡出現(教學見 README)。<br>
+      目前顯示本機紀錄:🏆 無盡最佳 <b style="color:var(--green)">${META.best.endless||0}</b> 波</div>`;
+    return;
+  }
+  list.innerHTML='<div class="dexCard" style="color:var(--dim)">☁️ 讀取中…</div>';
+  initFirebase(ok=>{
+    if(!ok){list.innerHTML='<div class="dexCard" style="color:var(--magenta)">連線失敗,稍後再試</div>';return;}
+    FB.db.collection('scores').orderBy('wave','desc').limit(20).get().then(qs=>{
+      const me=playerId(); let html='',i=0;
+      qs.forEach(doc=>{
+        i++;
+        const d=doc.data(), self=doc.id===me;
+        html+=`<div class="dexCard achRow"${self?' style="border-color:#5dff9d66"':''}>
+          <span class="ai" style="min-width:34px;text-align:center">${i<=3?['🥇','🥈','🥉'][i-1]:'#'+i}</span>
+          <div style="flex:1"><b style="color:${self?'var(--green)':'var(--text)'}">${escapeHtml(d.name||'?')}${self?'(你)':''}</b>
+            <div class="dd" style="margin:0">${escapeHtml(d.map||'')}</div></div>
+          <span style="color:var(--cyan);font-weight:700;white-space:nowrap">${(d.wave|0)} 波</span></div>`;
+      });
+      list.innerHTML=html||'<div class="dexCard" style="color:var(--dim)">還沒有任何紀錄——去打無盡搶頭香!</div>';
+    }).catch(()=>{list.innerHTML='<div class="dexCard" style="color:var(--magenta)">讀取失敗</div>';});
+  });
+}
+function closeRank(){
+  $('rankModal').style.display='none';
+  if(!G.over){
+    G.paused=G._rankWasPaused||false;
+    $('pauseBtn').textContent=G.paused?'繼續':'暫停';
+    $('pauseBtn').classList.toggle('on',G.paused);
+  }
+}
+$('rankBtn').onclick=openRank;
+$('rankClose').onclick=closeRank;
+$('rankModal').addEventListener('click',e=>{ if(e.target.id==='rankModal') closeRank(); });
+
+function buildAch(){
+  $('achStats').textContent='累積擊殺 '+(META.stats.kills||0)+'・每日完成 '+(META.stats.dailyWins||0)+' 次・無盡最佳 '+(META.best.endless||0)+' 波';
+  const grid=$('achGrid'); grid.innerHTML='';
+  for(const a of ACHS){
+    const done=META.ach.includes(a.id);
+    const row=document.createElement('div');
+    row.className='dexCard achRow '+(done?'done':'undone');
+    row.innerHTML=`<span class="ai">${done?'🏅':'🔒'}</span>
+      <div style="flex:1"><b style="color:${done?'#ffd76a':'var(--text)'}">${a.n}</b>
+        <div class="dd" style="margin:2px 0 0">${a.d}</div></div>
+      <span style="color:#e8c3ff;font-size:13px;white-space:nowrap">${done?'✔ 已獲得':'✦'+a.gems}</span>`;
+    grid.appendChild(row);
+  }
+}
+function openAch(){
+  buildAch();
+  G._achWasPaused=G.paused; G.paused=true;
+  $('achModal').style.display='flex';
+}
+function closeAch(){
+  $('achModal').style.display='none';
+  if(!G.over){
+    G.paused=G._achWasPaused||false;
+    $('pauseBtn').textContent=G.paused?'繼續':'暫停';
+    $('pauseBtn').classList.toggle('on',G.paused);
+  }
+}
+$('achBtn').onclick=openAch;
+$('achClose').onclick=closeAch;
+$('achModal').addEventListener('click',e=>{ if(e.target.id==='achModal') closeAch(); });
+
 let wipePending=false;
 $('wipeBtn').onclick=function(){
   if(!wipePending){
@@ -1288,6 +1536,89 @@ $('metaBtn').onclick=openMeta;
 $('metaClose').onclick=closeMeta;
 $('metaPullBtn').onclick=metaPull;
 $('metaModal').addEventListener('click',e=>{ if(e.target.id==='metaModal') closeMeta(); });
+
+/* ================= 增益卡(每 5 波三選一) ================= */
+const PERKS=[
+  {icon:'🔥',n:'火力全開',d:'所有塔傷害 +15%',f:()=>{G.mod.dmg*=1.15;}},
+  {icon:'⚡',n:'神速裝填',d:'所有塔攻速 +14%',f:()=>{G.mod.rate*=.88;}},
+  {icon:'🦅',n:'鷹眼校準',d:'所有塔射程 +12%',f:()=>{G.mod.range*=1.12;}},
+  {icon:'💰',n:'戰爭經濟',d:'產能 +40%,立得 ◈150',f:()=>{G.mod.income*=1.4;G.money+=150;}},
+  {icon:'💎',n:'緊急資金',d:'立即獲得 ◈250',f:()=>{G.money+=250;}},
+  {icon:'🛡',n:'核心裝甲',d:'核心 +5',f:()=>{G.lives+=5;}},
+  {icon:'⛨',n:'精兵強將',d:'士兵/英雄 HP +40%',f:()=>{G.mod.uhp*=1.4;}},
+  {icon:'🏴',n:'賞金時代',d:'之後擊殺獎勵 +25%',f:()=>{G.mod.reward*=1.25;}},
+];
+function offerPerks(){
+  const pool=[...PERKS];
+  const picks=[];
+  while(picks.length<3&&pool.length)picks.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  const grid=$('perkCards'); grid.innerHTML='';
+  picks.forEach(pk=>{
+    const card=document.createElement('div');
+    card.className='gcard show'; card.style.borderColor='#c69bff';
+    card.style.width='130px'; card.style.cursor='pointer';
+    card.innerHTML=`<div class="gi">${pk.icon}</div><div class="gn">${pk.n}</div>
+      <div class="gr" style="color:var(--dim);letter-spacing:0">${pk.d}</div>`;
+    card.onclick=()=>{
+      pk.f(); G.modKey++; G.perksTaken.push(pk.n);
+      SFX.up();
+      toast('已選擇:'+pk.n);
+      $('perkModal').style.display='none';
+      G.paused=G._perkWasPaused||false;
+      updateHUD(); saveRun();
+    };
+    grid.appendChild(card);
+  });
+  G._perkWasPaused=G.paused; G.paused=true;
+  $('perkModal').style.display='flex';
+  SFX.sparkle();
+}
+
+/* ================= 主動技能 ================= */
+const SKILLS=[
+  {icon:'☄',n:'隕石轟炸',d:'點擊地圖轟炸(300 傷害)'},
+  {icon:'❄',n:'全場冰封',d:'凍結所有敵人 3 秒'},
+  {icon:'🔋',n:'緊急能源',d:'立即獲得 ◈150'},
+];
+function useSkill(i){
+  const sk=G.skills[i];
+  if(G.over)return;
+  if(sk.cd>0){toast('冷卻中('+Math.ceil(sk.cd)+'s)');return;}
+  if(i===0){ // 隕石:進入瞄準模式
+    G.aiming=!G.aiming;
+    toast(G.aiming?'☄ 點擊地圖投放隕石!':'已取消瞄準');
+    return;
+  }
+  if(i===1){
+    sk.cd=sk.max;
+    for(const e of G.enemies){ if(!e.dead) e.stun2=Math.max(e.stun2||0, e.type==='boss'?1.2:3); }
+    fxRing(cv.width/2,cv.height/2,'#8fd8ff',400);
+    SFX.boom(); toast('❄ 全場冰封!');
+  }else{
+    sk.cd=sk.max;
+    G.money+=150; SFX.coin(); updateHUD();
+    toast('🔋 +◈150!');
+  }
+  renderSkills();
+}
+function castMeteor(x,y){
+  const sk=G.skills[0];
+  sk.cd=sk.max; G.aiming=false;
+  SFX.boom();
+  fxRing(x,y,'#ff8c42',95); fxRing(x,y,'#fff',55);
+  for(const e of G.enemies){ if(!e.dead && dist(e.x,e.y,x,y)<=95) damage(e,300); }
+  renderSkills();
+}
+function renderSkills(){
+  G.skills.forEach((sk,i)=>{
+    const b=$('sk'+i); if(!b)return;
+    const ready=sk.cd<=0;
+    b.style.opacity=ready?1:.45;
+    b.querySelector('.skcd').textContent=ready?'':Math.ceil(sk.cd);
+    b.classList.toggle('aim', i===0&&G.aiming);
+  });
+}
+setInterval(renderSkills,300);
 
 /* ================= 每日挑戰 ================= */
 function seedRng(str){
@@ -1419,7 +1750,7 @@ function showInfo(){
       tw.evoIdx=i; tw.es=buildEvoStats(tw.type,i);
       updateHUD(); showInfo();
       fxRing(tw.x,tw.y,'#ffd76a',40); fxRing(tw.x,tw.y,'#fff',26);
-      SFX.up(); setTimeout(()=>SFX.sparkle(),200); saveRun(); toast('進化完成:'+evos[i].n+'!');
+      SFX.up(); setTimeout(()=>SFX.sparkle(),200); saveRun(); unlockAch('evo_first'); toast('進化完成:'+evos[i].n+'!');
     };
     if($('evo0Btn'))$('evo0Btn').onclick=()=>doEvo(0);
     if($('evo1Btn'))$('evo1Btn').onclick=()=>doEvo(1);
@@ -1447,6 +1778,7 @@ cv.addEventListener('touchstart',e=>{
 cv.addEventListener('click',e=>{
   if(G.over)return;
   const {x,y}=canvasPos(e);
+  if(G.aiming){ castMeteor(x,y); return; } // 隕石瞄準中
   const c=Math.floor(x/CELL), r=Math.floor(y/CELL);
   if(c<0||c>=COLS||r<0||r>=ROWS)return;
 
@@ -1486,6 +1818,8 @@ cv.addEventListener('click',e=>{
   showInfo();
 });
 window.addEventListener('keydown',e=>{ if(e.key==='Escape'){
+  if($('rankModal').style.display==='flex'){closeRank();return;}
+  if($('achModal').style.display==='flex'){closeAch();return;}
   if($('dailyModal').style.display==='flex'){closeDaily();return;}
   if($('metaModal').style.display==='flex'){closeMeta();return;}
   if($('mapModal').style.display==='flex'){closeMaps();return;}
@@ -1556,16 +1890,25 @@ $('pauseBtn').onclick=function(){
 /* ================= 遊戲邏輯 ================= */
 function spawnEnemy(spec){
   const base=ENEMY_TYPES[spec.type];
-  G.enemies.push({
+  const e={
     type:spec.type, hp:base.hp*spec.hpMul, maxHp:base.hp*spec.hpMul,
     speed:base.speed*(spec.spdMul||1),
     reward:Math.round(base.reward*(spec.rwMul||1)),
     r:base.r, color:base.color,
     x:WAYPOINTS[0][0], y:WAYPOINTS[0][1], wp:1, slow:0, slowT:0, dead:false, t:Math.random()*7,
-  });
+    stealth:base.stealth||false, healer:base.healer||false, split:base.split||false,
+    shield:base.shieldN||0, fly:base.fly||false, healT:1.5,
+  };
+  if(spec.type==='boss'){
+    e.ability=['dash','summon','silence'][Math.floor(Math.random()*3)];
+    e.abT=5;
+  }
+  G.enemies.push(e);
 }
 
 function update(dt){
+  // 主動技能冷卻
+  for(const sk of G.skills) if(sk.cd>0) sk.cd-=dt;
   // 自動波次倒數
   if(G.auto && !G.waveActive && !G.over && G.autoTimer>0){
     G.autoTimer-=dt;
@@ -1593,6 +1936,44 @@ function update(dt){
     if(e.slowT>0){e.slowT-=dt; if(e.slowT<=0)e.slow=0;}
     if(e.vulnT>0)e.vulnT-=dt;
     if(e.stun2>0){e.stun2-=dt; continue;} // 暈眩/凍結:停止移動
+    // 治療怪:週期治療周圍同伴
+    if(e.healer){
+      e.healT-=dt;
+      if(e.healT<=0){
+        e.healT=1.5;
+        let healed=false;
+        for(const o of G.enemies){
+          if(o===e||o.dead)continue;
+          if(dist(e.x,e.y,o.x,o.y)<=78 && o.hp<o.maxHp){
+            o.hp=Math.min(o.maxHp, o.hp+o.maxHp*.06); healed=true;
+          }
+        }
+        if(healed)fxRing(e.x,e.y,'#7dffb0',34);
+      }
+    }
+    // BOSS 技能
+    if(e.type==='boss'&&e.ability){
+      e.abT-=dt;
+      if(e.abT<=0){
+        if(e.ability==='dash'){
+          e.abT=8; e.dashT=1.2;
+          G.fx.push({kind:'text',x:e.x,y:e.y-28,text:'⚡衝刺!',color:'#ff3d3d',life:.8,max:.8});
+        }else if(e.ability==='summon'){
+          e.abT=12;
+          const bm2=e.maxHp/ENEMY_TYPES.boss.hp;
+          for(let i=0;i<3;i++){
+            G.enemies.push({type:'grunt',hp:34*bm2*.55,maxHp:34*bm2*.55,speed:55,reward:4,r:9,color:'#ff5fa8',
+              x:e.x+(Math.random()*22-11),y:e.y+(Math.random()*22-11),wp:e.wp,slow:0,slowT:0,dead:false,t:Math.random()*7,healT:9});
+          }
+          G.fx.push({kind:'text',x:e.x,y:e.y-28,text:'👿召喚!',color:'#ff3d3d',life:.8,max:.8});
+        }else{
+          e.abT=15;
+          for(const tw of G.towers){ if(dist(tw.x,tw.y,e.x,e.y)<=140) tw.silence=2; }
+          fxRing(e.x,e.y,'#ff3d3d',140);
+          G.fx.push({kind:'text',x:e.x,y:e.y-28,text:'🚫沉默!',color:'#ff3d3d',life:.8,max:.8});
+        }
+      }
+    }
     if(e.blocker){
       if(e.blocker.dead||e.blocker.hp<=0){ e.blocker=null; }
       else if(dist(e.x,e.y,e.blocker.x,e.blocker.y)>36){
@@ -1609,7 +1990,16 @@ function update(dt){
       }
     }
     let sp=e.speed*(1-(e.slow||0));
+    if(e.dashT>0){ e.dashT-=dt; sp*=3; }
     let remain=sp*dt;
+    if(e.fly){
+      // 飛行:無視路徑,直線飛向核心
+      const ex=WAYPOINTS.at(-1)[0], ey=WAYPOINTS.at(-1)[1];
+      const fd=dist(e.x,e.y,ex,ey);
+      if(fd<=remain+4){ e.x=ex; e.y=ey; e.wp=WAYPOINTS.length; }
+      else{ e.x+=(ex-e.x)/fd*remain; e.y+=(ey-e.y)/fd*remain; }
+      remain=0;
+    }
     while(remain>0 && e.wp<WAYPOINTS.length){
       const [tx,ty]=WAYPOINTS[e.wp];
       const d=dist(e.x,e.y,tx,ty);
@@ -1633,7 +2023,7 @@ function update(dt){
     if(!u.target){
       // 尋找進入交戰範圍且未被阻擋的敵人(BOSS 除外)
       for(const e of G.enemies){
-        if(e.dead||e.blocker||(e.type==='boss'&&!u.heroic))continue;
+        if(e.dead||e.blocker||e.fly||(e.type==='boss'&&!u.heroic))continue;
         if(dist(u.x,u.y,e.x,e.y)<=(u.heroic?32:26)){ u.target=e; e.blocker=u; break; }
       }
     }
@@ -1647,6 +2037,18 @@ function update(dt){
 
   // 砲塔攻擊
   for(const t of G.towers){
+    // 創世神塔:獨立能源產出
+    if(t.type==='omega'){
+      const so=statsOf(t);
+      t.incT=(t.incT!=null?t.incT:so.interval)-dt;
+      if(t.incT<=0){
+        t.incT=so.interval;
+        G.money+=so.income;
+        G.fx.push({kind:'text',x:t.x,y:t.y-22,text:'+'+so.income,color:'#ff5edb',life:.9,max:.9});
+        SFX.coin(); updateHUD();
+      }
+    }
+    if(t.silence>0){ t.silence-=dt; continue; } // 被 BOSS 沉默
     // 重力塔:常駐力場,每幀作用
     {
       const s0=statsOf(t);
@@ -1665,8 +2067,12 @@ function update(dt){
     if(t.cd>0)continue;
     const s=statsOf(t);
     const col=TOWER_TYPES[t.type].color;
+    // 創世神塔:攻擊之餘持續產能(獨立計時)
+    if(t.type==='omega'&&s.income){
+      t.incT=(t.incT||s.interval)-dt*0; // 由下方統一遞減
+    }
     // 聚能核:不攻擊,定時產能
-    if(s.income!=null){
+    if(s.income!=null && t.type!=='omega'){
       t.cd=s.interval;
       G.money+=s.income;
       G.fx.push({kind:'text',x:t.x,y:t.y-20,text:'+'+s.income,color:col,life:.9,max:.9});
@@ -1694,8 +2100,11 @@ function update(dt){
     let best=null,bestProg=-1;
     for(const e of G.enemies){
       if(e.dead)continue;
+      if(e.stealth && !SEES_STEALTH[t.type])continue; // 隱形:僅偵測塔可鎖定
       if(dist(t.x,t.y,e.x,e.y)>s.range)continue;
-      const prog=e.wp*10000 - dist(e.x,e.y,...WAYPOINTS[Math.min(e.wp,WAYPOINTS.length-1)]);
+      const prog=e.fly
+        ? 99999-dist(e.x,e.y,WAYPOINTS.at(-1)[0],WAYPOINTS.at(-1)[1])
+        : e.wp*10000 - dist(e.x,e.y,...WAYPOINTS[Math.min(e.wp,WAYPOINTS.length-1)]);
       if(prog>bestProg){bestProg=prog;best=e;}
     }
     if(!best){
@@ -1751,9 +2160,37 @@ function update(dt){
           if(!e.dead) pushBack(e, e.type==='boss'? s.pull*.3 : s.pull);
         }
       }
+    }else if(t.type==='omega'){
+      // 創世神塔:多目標齊射,每發都帶全部負面效果
+      const pool=G.enemies.filter(e=>!e.dead&&dist(t.x,t.y,e.x,e.y)<=s.range)
+        .sort((a,b)=>b.wp-a.wp).slice(0,s.targets);
+      for(const tg of pool){
+        G.bullets.push({x:t.x,y:t.y,target:tg,src:t,speed:560,dmg:bdmg,
+          splash:s.splash, slow:s.slow, slowT:s.slowT, dot:s.dot, dotT:s.dotT,
+          crit:s.crit, stunC:s.stunC, stun:s.stunT, execTh:s.execTh,
+          bountyAmt:s.bounty, vuln:s.vuln, vulnT:s.vulnT,
+          color:col, r:5});
+      }
+      // 附帶電弧連鎖
+      if(pool.length){
+        let cur=pool[0], cd2=Math.round(bdmg*.5);
+        const hit=new Set(pool);
+        for(let i=0;i<s.chain;i++){
+          let next=null,nd=1e9;
+          for(const e of G.enemies){
+            if(e.dead||hit.has(e))continue;
+            const d=dist(cur.x,cur.y,e.x,e.y);
+            if(d<110&&d<nd){nd=d;next=e;}
+          }
+          if(!next)break;
+          G.fx.push({kind:'beam',x1:cur.x,y1:cur.y,x2:next.x,y2:next.y,life:.15,max:.15,color:col});
+          damage(next,cd2,t); hit.add(next); cur=next;
+          cd2=Math.max(1,Math.round(cd2*.85));
+        }
+      }
     }else if(t.type==='multi'){
       // 散射:同時射擊最前面的 N 個目標
-      const pool=G.enemies.filter(e=>!e.dead&&dist(t.x,t.y,e.x,e.y)<=s.range)
+      const pool=G.enemies.filter(e=>!e.dead&&!(e.stealth&&!SEES_STEALTH[t.type])&&dist(t.x,t.y,e.x,e.y)<=s.range)
         .sort((a,b)=>b.wp-a.wp).slice(0,s.targets);
       for(const tg of pool){
         G.bullets.push({x:t.x,y:t.y,target:tg,src:t,speed:430,dmg:bdmg,splash:0,color:col,r:3});
@@ -1853,7 +2290,14 @@ function update(dt){
     const bonus=25+G.wave*5;
     G.money+=bonus;
     toast('第 '+G.wave+' 波防守成功!獎勵 ◈'+bonus);
-    if(G.endless){ META.gems+=5; G.runEarned+=5; saveMeta(); }
+    if(G.endless){
+      META.gems+=5; G.runEarned+=5;
+      if(G.wave>(META.best.endless||0))META.best.endless=G.wave;
+      if(G.wave>=30)unlockAch('wave_30');
+    }
+    checkAchs(); saveMeta();
+    const willEnd = !G.endless && G.wave>=G.maxWave;
+    if(!willEnd && G.wave%5===0) setTimeout(offerPerks,600); // 每 5 波三選一
     if(!G.endless && G.wave>=G.maxWave){ endGame(true); }
     else{
       $('startBtn').disabled=false;
@@ -1871,14 +2315,28 @@ function update(dt){
 
 function damage(e,d,src){
   if(e.dead)return;
+  if(e.shield>0){ // 護盾怪:格擋此次傷害
+    e.shield--;
+    G.fx.push({kind:'ring',x:e.x,y:e.y,color:'#9ecbff',life:.22,max:.22,r:e.r+9});
+    return;
+  }
   if(e.vulnT>0) d*=1+(e.vuln||0); // 腐蝕易傷
   if(src){ src.dmgDone=(src.dmgDone||0)+Math.min(d,Math.max(0,e.hp)); }
   e.hp-=d;
   if(e.hp<=0){
     if(src) src.kills=(src.kills||0)+1;
+    META.stats.kills=(META.stats.kills||0)+1;
     e.dead=true;
+    // 分裂怪:死後裂成兩隻小怪
+    if(e.split){
+      for(let i=0;i<2;i++){
+        G.enemies.push({type:'grunt',mini:true,hp:e.maxHp*.3,maxHp:e.maxHp*.3,
+          speed:e.speed*1.35,reward:4,r:6,color:'#ff8ad4',
+          x:e.x+(i?9:-9),y:e.y+(Math.random()*10-5),wp:e.wp,slow:0,slowT:0,dead:false,t:Math.random()*7,healT:9});
+      }
+    }
     SFX.kill();
-    G.money+=e.reward;
+    G.money+=Math.round(e.reward*(G.mod.reward||1));
     if(e.bounty){ // 賞金標記
       G.money+=e.bounty;
       G.fx.push({kind:'text',x:e.x,y:e.y-14,text:'+'+e.bounty,color:'#ffab3d',life:.8,max:.8});
@@ -1905,6 +2363,7 @@ function nearestPathPoint(x,y){
   return best;
 }
 function pushBack(e,amount){
+  if(e.fly)return; // 飛行怪不受路徑擊退
   // 沿路徑往回拖
   while(amount>0 && e.wp>0){
     const [px,py]=WAYPOINTS[e.wp-1];
@@ -1939,6 +2398,17 @@ function endGame(win){
     META.gems+=earned; saveMeta();
   }
   if(G.endless) earned=G.runEarned;
+  if(win){
+    if(G.daily){
+      META.stats.dailyWins=(META.stats.dailyWins||0)+1;
+      if(META.stats.dailyWins>=3)unlockAch('daily_3');
+    }
+    else if(G.diffIdx===0)unlockAch('first_win');
+    else if(G.diffIdx===2)unlockAch('hell_win');
+  }
+  if(G.endless && G.wave>(META.best.endless||0))META.best.endless=G.wave;
+  if(G.endless && G.wave>0) submitScore(G.wave); // 上傳雲端排行
+  checkAchs(); saveMeta();
   if(win)SFX.win(); else SFX.lose();
   const ov=$('overlay');
   $('ovTitle').textContent=win?'防 線 守 住 了':'核 心 淪 陷';
@@ -1947,7 +2417,7 @@ function endGame(win){
     ? (G.daily
         ? '📅 每日挑戰完成!'+(earned?'獲得 ✦'+earned+' 星鑽!':'今日獎勵已領取,明天再來!')
         : '【'+DIFFS[G.diffIdx].name+'】全 '+G.maxWave+' 波通關!獲得 ✦'+earned+' 星鑽,快去基地抽新塔!')
-    : (G.endless ? '無盡模式:堅守 '+G.wave+' 波!累積獲得 ✦'+earned+' 星鑽'
+    : (G.endless ? '無盡模式:堅守 '+G.wave+' 波!累積獲得 ✦'+earned+' 星鑽・🏆 最佳紀錄 '+(META.best.endless||G.wave)+' 波'
                  : '防線在第 '+G.wave+' 波被突破…(通關才能獲得星鑽)');
   updateHUD();
   // 各塔輸出統計(前 6 名)
@@ -2061,6 +2531,23 @@ function draw(now){
     ctx.shadowColor=def.color;ctx.shadowBlur=8;
     ctx.fillText(def.icon,t.x,t.y+1);
     ctx.shadowBlur=0;
+    if(t.type==='omega'){
+      // 創世神塔:雙層旋轉光環
+      ctx.save();
+      ctx.translate(t.x,t.y);
+      ctx.strokeStyle=def.color;ctx.lineWidth=1.5;
+      ctx.globalAlpha=.55;
+      ctx.rotate(now/700);
+      ctx.beginPath();ctx.arc(0,0,21,0,2.1);ctx.arc(0,0,21,3.14,5.24);ctx.stroke();
+      ctx.rotate(-now/350);
+      ctx.strokeStyle='#fff';ctx.globalAlpha=.35;
+      ctx.beginPath();ctx.arc(0,0,26,.5,2.6);ctx.arc(0,0,26,3.64,5.74);ctx.stroke();
+      ctx.restore();
+    }
+    if(t.silence>0){
+      ctx.fillStyle='#ff3d3d';ctx.font='700 13px sans-serif';ctx.textAlign='center';
+      ctx.fillText('🚫',t.x,t.y-24);
+    }
     // 等級點
     for(let i=0;i<=t.level;i++){
       ctx.fillStyle=def.color;
@@ -2103,16 +2590,29 @@ function draw(now){
     ctx.save();
     ctx.shadowColor=e.color;ctx.shadowBlur=12;
     ctx.fillStyle=e.color;
+    if(e.stealth)ctx.globalAlpha=.42; // 隱形半透明
     ctx.beginPath();
     if(e.type==='boss'){
       poly(e.x,e.y+bob,e.r,6,e.t);
     }else if(e.type==='tank'){
       rounded(e.x-e.r,e.y-e.r+bob,e.r*2,e.r*2,4);
+    }else if(e.fly){
+      poly(e.x,e.y+bob,e.r+2,3,e.t*2); // 飛行:旋轉三角
     }else{
       ctx.arc(e.x,e.y+bob,e.r,0,7);
     }
     ctx.fill();
     ctx.restore();
+    if(e.shield>0){ // 護盾層數
+      ctx.strokeStyle='#9ecbff';ctx.lineWidth=1.8;
+      ctx.beginPath();ctx.arc(e.x,e.y+bob,e.r+5,0,7);ctx.stroke();
+      ctx.fillStyle='#9ecbff';ctx.font='700 9px sans-serif';ctx.textAlign='center';
+      ctx.fillText(e.shield,e.x+e.r+9,e.y+bob-e.r);
+    }
+    if(e.healer){
+      ctx.fillStyle='#0a2618';ctx.font='700 11px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('+',e.x,e.y+bob+.5);
+    }
     if(e.slow>0){
       ctx.strokeStyle='#8fd8ff';ctx.lineWidth=1.5;
       ctx.beginPath();ctx.arc(e.x,e.y+bob,e.r+3,0,7);ctx.stroke();
@@ -2216,6 +2716,8 @@ function saveRun(){
       wave: G.waveActive? G.wave-1 : G.wave, // 波次進行中則回溯到該波開始前
       money:G.money, lives:G.lives, runEarned:G.runEarned,
       auto:G.auto, speed:G.speed, daily:G.daily||null,
+      mod:G.mod, modKey:G.modKey, perksTaken:G.perksTaken,
+      skcd:G.skills.map(k=>Math.ceil(k.cd)),
       towers:G.towers.map(t=>({type:t.type,c:t.c,r:t.r,level:t.level,
         evoIdx:(t.evoIdx!=null?t.evoIdx:null),spent:t.spent,
         dmgDone:t.dmgDone||0,kills:t.kills||0})),
@@ -2240,6 +2742,8 @@ function loadRun(){
     G.maxWave=mw;
     G.money=r.money; G.lives=r.lives; G.wave=r.wave; G.runEarned=r.runEarned||0;
     G.auto=!!r.auto; G.speed=[1,2,3].includes(r.speed)?r.speed:1;
+    if(r.mod){ G.mod={dmg:1,range:1,rate:1,income:1,uhp:1,reward:1,...r.mod}; G.modKey=r.modKey||0; G.perksTaken=r.perksTaken||[]; }
+    if(Array.isArray(r.skcd)) G.skills.forEach((k,i)=>k.cd=r.skcd[i]||0);
     G.towers=r.towers.filter(d=>TOWER_TYPES[d.type]).map(d=>{
       const t={type:d.type,c:d.c,r:d.r,x:d.c*CELL+CELL/2,y:d.r*CELL+CELL/2,
         level:Math.min(d.level||0,2),cd:0,spent:d.spent||TOWER_TYPES[d.type].cost,
@@ -2294,6 +2798,9 @@ $('fsBtn').onclick=()=>{
   setTimeout(fitCanvas,350);
 };
 document.addEventListener('fullscreenchange',()=>setTimeout(fitCanvas,200));
+$('sk0').onclick=()=>useSkill(0);
+$('sk1').onclick=()=>useSkill(1);
+$('sk2').onclick=()=>useSkill(2);
 $('sndBtn').onclick=function(){
   SFX.init();
   SFX.mode=(SFX.mode+2)%3; // 2→1→0→2
