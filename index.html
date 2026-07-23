@@ -120,10 +120,23 @@
   /* ===== 每日挑戰 ===== */
   #dailyModal{position:fixed;inset:0;background:rgba(5,8,16,.93);display:none;
     flex-direction:column;align-items:center;justify-content:center;z-index:28;padding:16px}
+  /* ===== 新手教學 ===== */
+  #tutOverlay{position:fixed;inset:0;background:rgba(5,8,16,.82);display:none;
+    align-items:center;justify-content:center;z-index:32;padding:16px}
+  .tutBox{max-width:430px;width:100%;background:var(--panel);border:1.5px solid var(--cyan);
+    border-radius:14px;padding:18px 20px;box-shadow:0 0 34px rgba(57,214,255,.3)}
+  .tutStep{font-size:11px;color:var(--dim);letter-spacing:3px;margin-bottom:4px}
+  .tutTitle{font-size:17px;font-weight:700;color:var(--cyan);letter-spacing:2px;margin-bottom:8px;
+    text-shadow:0 0 12px rgba(57,214,255,.5)}
+  .tutBody{font-size:13.5px;line-height:1.85;color:var(--text);margin-bottom:14px}
+  .tutBody b{color:var(--amber)}
+  .tutBtns{display:flex;gap:8px;justify-content:flex-end;align-items:center}
   /* ===== 排行榜 ===== */
   #rankModal{position:fixed;inset:0;background:rgba(5,8,16,.93);display:none;
     flex-direction:column;align-items:center;z-index:29;padding:16px}
   /* ===== 成就 ===== */
+  #edexModal{position:fixed;inset:0;background:rgba(5,8,16,.93);display:none;
+    flex-direction:column;align-items:center;z-index:29;padding:16px}
   #achModal{position:fixed;inset:0;background:rgba(5,8,16,.93);display:none;
     flex-direction:column;align-items:center;z-index:29;padding:16px}
   .achRow{display:flex;align-items:center;gap:10px}
@@ -143,6 +156,10 @@
   .metaCard.locked{opacity:.4;filter:grayscale(.6)}
   .metaCard.inload{border-color:var(--green)!important;box-shadow:0 0 10px rgba(93,255,157,.3)}
   .metaCard .dd{margin-bottom:0}
+  .boostChip{display:inline-block;margin:0 6px;padding:2px 9px;border-radius:12px;
+    border:1px solid var(--line);color:var(--dim);cursor:pointer;transition:all .15s}
+  .boostChip:hover{border-color:var(--cyan);color:var(--text)}
+  .boostChip.on{border-color:#e8c3ff;color:#e8c3ff;box-shadow:0 0 8px rgba(232,195,255,.3)}
   /* ===== 地圖選擇 ===== */
   #mapModal{position:fixed;inset:0;background:rgba(5,8,16,.93);display:none;
     flex-direction:column;align-items:center;justify-content:center;z-index:28;padding:16px}
@@ -348,10 +365,12 @@
     <button class="mini" id="modeBtn">標準</button>
     <button class="mini" id="speedBtn">速度 ×1</button>
     <button class="mini" id="pauseBtn">暫停</button>
+    <button class="mini" id="topRankBtn">🏆 排行</button>
     <button class="mini" id="dailyBtn">📅 每日</button>
     <button class="mini" id="metaBtn">✦ 基地</button>
     <button class="mini" id="mapBtn">🗺 地圖</button>
-    <button class="mini" id="dexBtn">📖 圖鑑</button>
+    <button class="mini" id="dexBtn">📖 塔鑑</button>
+    <button class="mini" id="edexBtn">👾 敵鑑</button>
     <button class="mini" id="fsBtn">⛶ 全螢幕</button>
     <button class="mini" id="sndBtn">🔊</button>
   </div>
@@ -384,6 +403,17 @@
 
 <button id="shopFab">🏪</button>
 <div id="rotateHint">📱 建議轉「橫向」遊玩,戰場會大很多!<button id="rotateClose">知道了</button></div>
+<div id="tutOverlay">
+  <div class="tutBox">
+    <div class="tutStep" id="tutStep"></div>
+    <div class="tutTitle" id="tutTitle"></div>
+    <div class="tutBody" id="tutBody"></div>
+    <div class="tutBtns">
+      <button class="mini" id="tutSkip">跳過教學</button>
+      <button class="btn" id="tutNext">下一步 ▶</button>
+    </div>
+  </div>
+</div>
 <div id="toast"></div>
 <div id="perkModal">
   <div class="dexBox" style="max-width:520px;height:auto;align-items:center">
@@ -407,12 +437,23 @@
     <button class="btn" id="dailyGo" style="max-width:260px;align-self:center"></button>
   </div>
 </div>
+<div id="edexModal">
+  <div class="dexBox" style="max-width:820px">
+    <div class="dexHead">
+      <div class="dexTitle">👾 敵 人 圖 鑑</div>
+      <div class="dexSub">了解敵人特性與剋制方式</div>
+      <button class="mini" id="edexClose" style="margin-left:auto">✕ 關閉</button>
+    </div>
+    <div class="dexGrid" id="edexGrid"></div>
+  </div>
+</div>
 <div id="rankModal">
   <div class="dexBox" style="max-width:520px">
     <div class="dexHead">
       <div class="dexTitle">🏆 無 盡 排 行 榜</div>
       <div class="dexSub" id="rankMine"></div>
-      <button class="mini" id="rankClose" style="margin-left:auto">✕ 關閉</button>
+      <button class="mini" id="rankRefresh" style="margin-left:auto">↻ 重新整理</button>
+      <button class="mini" id="rankClose">✕ 關閉</button>
     </div>
     <div class="dexGrid" id="rankList" style="grid-template-columns:1fr"></div>
   </div>
@@ -456,6 +497,8 @@
       <span class="metaGems">✦ <b id="metaGemVal">0</b> 星鑽</span>
       <button class="gbtn" id="metaPullBtn" style="width:auto;margin:0;padding:8px 18px">🎴 抽新塔 ✦100</button>
       <span class="dexSub">編隊 <b id="loadCnt" style="color:var(--green)">0</b>/10・點擊已解鎖的塔加入/移出編隊</span>
+      <div id="synBar" style="width:100%;font-size:11.5px;line-height:1.8"></div>
+      <div id="boostBar" style="width:100%;font-size:11.5px;line-height:2.1"></div>
       <button class="mini" id="rankBtn" style="margin-left:auto;color:#5dff9d;border-color:#5dff9d">🏆 排行</button>
       <button class="mini" id="achBtn" style="color:#ffd76a;border-color:#ffd76a">🏅 成就</button>
       <button class="mini" id="wipeBtn" style="color:var(--magenta);border-color:var(--magenta)">🗑 清除存檔</button>
@@ -479,7 +522,8 @@
     <div class="dexHead">
       <div class="dexTitle">📖 塔 圖 鑑</div>
       <div class="dexSub" id="dexCount"></div>
-      <button class="mini" id="dexClose" style="margin-left:auto">✕ 關閉</button>
+      <button class="mini" id="tutAgainBtn" style="margin-left:auto">🎓 新手教學</button>
+      <button class="mini" id="dexClose">✕ 關閉</button>
     </div>
     <div class="dexGrid" id="dexGrid"></div>
   </div>
@@ -506,7 +550,7 @@
 <script>
 "use strict";
 /* ================= 基本設定 ================= */
-const CELL = 48, COLS = 16, ROWS = 10;
+const CELL = 48; let COLS = 16, ROWS = 10;
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
 
@@ -524,11 +568,49 @@ const MAPS=[
   {name:'死亡直線', diff:'地獄', dc:'#ff3d3d',
    desc:'一條直路貫穿全圖,敵人轉瞬即至。你敢挑戰嗎?',
    wp:[[-1,5],[16,5]]},
+  {name:'深淵迷城', diff:'☠ 超難限定', dc:'#ff2d95', cols:24, rows:15, hardOnly:true,
+   desc:'超大戰場(24×15)!路徑蜿蜒 76 格,但敵人強度是地獄的 1.5 倍——僅能以超難模式挑戰。',
+   wp:[[-1,2],[5,2],[5,6],[10,6],[10,2],[16,2],[16,6],[21,6],[21,11],[14,11],[14,8],[8,8],[8,13],[24,13]]},
 ];
+function seedRng(str){
+  let h=1779033703^str.length;
+  for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19;}
+  return function(){h=Math.imul(h^(h>>>16),2246822507);h=Math.imul(h^(h>>>13),3266489909);return ((h^=h>>>16)>>>0)/4294967296;}
+}
+/* ===== 地形機關 ===== */
+const TERRAIN={
+  high:{n:'高地',   ic:'▲', c:'#8fd8ff', d:'射程 +20%'},
+  node:{n:'能量節點',ic:'◈', c:'#ffd76a', d:'產能 +50%・攻速 +10%'},
+  ruin:{n:'廢墟',   ic:'✖', c:'#5a6a8a', d:'無法建塔'},
+  seal:{n:'封印格', ic:'✦', c:'#c69bff', d:'花 ◈120 解封後可建塔並獲得 +25% 傷害'},
+};
+let terrain=new Map(); // "c,r" → type
+function genTerrain(mi){
+  terrain=new Map();
+  const rng=seedRng('terrain-'+mi+'-'+(MAPS[mi].name||''));
+  const free=[];
+  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++)
+    if(!pathCells.has(c+','+r))free.push([c,r]);
+  const scale=free.length/130;
+  const plan=[['high',Math.round(5*scale)],['node',Math.round(3*scale)],
+              ['ruin',Math.round(6*scale)],['seal',Math.round(3*scale)]];
+  for(const [type,n] of plan){
+    for(let i=0;i<n&&free.length;i++){
+      const k=Math.floor(rng()*free.length);
+      const [c,r]=free.splice(k,1)[0];
+      terrain.set(c+','+r,type);
+    }
+  }
+}
+const terrainAt=(c,r)=>terrain.get(c+','+r);
+
 let curMapIdx=0;
 let WAYPOINTS_G, WAYPOINTS, pathCells;
 function loadMap(i){
   curMapIdx=i;
+  COLS=MAPS[i].cols||16; ROWS=MAPS[i].rows||10;
+  cv.width=COLS*CELL; cv.height=ROWS*CELL;
+  if(typeof fitCanvas==='function')fitCanvas();
   WAYPOINTS_G=MAPS[i].wp;
   WAYPOINTS=WAYPOINTS_G.map(([c,r])=>[c*CELL+CELL/2, r*CELL+CELL/2]);
   pathCells=new Set();
@@ -542,6 +624,7 @@ function loadMap(i){
       c+=dc;r+=dr;
     }
   }
+  genTerrain(i);
 }
 loadMap(0);
 
@@ -700,26 +783,83 @@ function buildEvoStats(type,ei){
 // 取得塔的實際數值(進化後用進化數值,再套用本場增益卡)
 function statsOf(t){
   const base = t.es || TOWER_TYPES[t.type].lv[t.level];
-  if(!G.modKey) return base;
   if(t._mk===G.modKey && t._mb===base) return t._ms;
+  const sy=G.syn||{dmg:1,range:1,rate:1,income:1,uhp:1,reward:1};
+  // 地形加成
+  let tDmg=1,tRange=1,tRate=1,tInc=1;
+  const tt=t.terr;
+  if(tt==='high')tRange=1.2;
+  else if(tt==='node'){tInc=1.5;tRate=.9;}
+  else if(tt==='seal')tDmg=1.25;
   const m={...base};
-  if(m.dmg!=null)m.dmg=Math.round(m.dmg*G.mod.dmg);
-  if(m.range!=null&&m.range<900)m.range=Math.round(m.range*G.mod.range);
-  if(m.rate!=null)m.rate=m.rate*G.mod.rate;
-  if(m.income!=null)m.income=Math.round(m.income*G.mod.income);
-  if(m.uhp!=null)m.uhp=Math.round(m.uhp*G.mod.uhp);
+  if(m.dmg!=null)m.dmg=Math.round(m.dmg*G.mod.dmg*sy.dmg*tDmg);
+  if(m.range!=null&&m.range<900)m.range=Math.round(m.range*G.mod.range*sy.range*tRange);
+  if(m.rate!=null)m.rate=m.rate*G.mod.rate*sy.rate*tRate;
+  if(m.income!=null)m.income=Math.round(m.income*G.mod.income*sy.income*tInc);
+  if(m.uhp!=null)m.uhp=Math.round(m.uhp*G.mod.uhp*sy.uhp);
   t._mk=G.modKey; t._mb=base; t._ms=m;
   return m;
 }
 const fmtNum = n => n>=1e6? (n/1e6).toFixed(1)+'M' : n>=1e3? (n/1e3).toFixed(1)+'K' : Math.round(n);
+
+/* ================= 無盡詞綴(每 10 波追加) ================= */
+const AFFIXES=[
+  {id:'nofreeze', n:'鋼鐵意志', d:'敵人免疫減速與凍結', c:'#8fd8ff'},
+  {id:'regen',    n:'再生血脈', d:'敵人每秒回復 1.5% 最大血量', c:'#7dffb0'},
+  {id:'shielded', n:'全體護盾', d:'所有敵人獲得 2 層護盾', c:'#9ecbff'},
+  {id:'swarm',    n:'蟲群突襲', d:'敵人數量 +50%,但血量 -20%', c:'#ff8ad4'},
+  {id:'rich',     n:'血債血償', d:'敵人血量 +40%,擊殺獎勵 +60%', c:'#ffc857'},
+  {id:'silence',  n:'干擾力場', d:'每 12 秒隨機讓 3 座塔沉默 2 秒', c:'#ff3d3d'},
+];
+function rollAffix(){
+  const pool=AFFIXES.filter(a=>!G.affixes.some(x=>x.id===a.id));
+  if(!pool.length)return;
+  const a=pool[Math.floor(Math.random()*pool.length)];
+  G.affixes.push(a);
+  SFX.horn();
+  toast('☠ 新詞綴:'+a.n+' — '+a.d);
+  G.fx.push({kind:'text',x:cv.width/2,y:cv.height/2,text:'☠ '+a.n,color:a.c,life:2,max:2});
+}
+const hasAffix = id => G.affixes.some(a=>a.id===id);
+
+/* ================= 羈絆(編隊組合加成) ================= */
+const SYNERGIES=[
+  {n:'冰火雙修', d:'全隊傷害 +12%', need:['frost','flame'], eff:{dmg:1.12}},
+  {n:'機械軍團', d:'士兵/英雄 HP +30%', need:['camp'], any:['gen','buff','hero'], eff:{uhp:1.3}},
+  {n:'元素支配', d:'全隊攻速 +10%', need:['tesla','poison','acid'], eff:{rate:.9}},
+  {n:'狙擊小隊', d:'全隊射程 +15%', need:['sniper','rail'], eff:{range:1.15}},
+  {n:'財團後援', d:'產能 +30%・擊殺獎勵 +15%', need:['gen','bounty'], eff:{income:1.3,reward:1.15}},
+  {n:'重炮陣線', d:'全隊傷害 +15%', need:['cannon','missile','storm'], eff:{dmg:1.15}},
+];
+function activeSynergies(){
+  const src = G.daily? G.daily.loadout : META.loadout;
+  return SYNERGIES.filter(sy=>
+    sy.need.every(k=>src.includes(k)) && (!sy.any || sy.any.some(k=>src.includes(k)))
+  );
+}
+function applySynergies(){
+  G.syn={dmg:1,range:1,rate:1,income:1,uhp:1,reward:1};
+  for(const sy of activeSynergies())
+    for(const k in sy.eff) G.syn[k]*=sy.eff[k];
+  G.modKey++;
+}
 
 /* ================= 難度模式 ================= */
 const DIFFS=[
   {name:'標準', color:'#39d6ff', hpX:1,   spdX:1,    reward:50,  endless:false},
   {name:'困難', color:'#ffc857', hpX:1.6, spdX:1.08, reward:100, endless:false},
   {name:'地獄', color:'#ff3d3d', hpX:2.6, spdX:1.18, reward:150, endless:false},
+  {name:'☠ 超難', color:'#ff2d95', hpX:4,   spdX:1.3,  reward:250, endless:false},
   {name:'∞ 無盡', color:'#c69bff', hpX:1, spdX:1,   reward:0,   endless:true},
 ];
+const HARD_IDX = DIFFS.findIndex(d=>d.name==='☠ 超難');
+function applyDiffUI(){
+  const D=DIFFS[G.diffIdx], b=$('modeBtn');
+  b.textContent=D.name;
+  b.style.color=G.diffIdx?D.color:'';
+  b.style.borderColor=G.diffIdx?D.color:'';
+  b.classList.toggle('on',G.diffIdx>0);
+}
 
 /* ================= 基地養成(星鑽・解鎖・編隊) ================= */
 const META_PULL_COST=100, LOADOUT_MAX=10;
@@ -860,12 +1000,13 @@ window.addEventListener('pointerdown',function initAudio(){
 /* ================= 遊戲狀態 ================= */
 const G = {
   money:200, lives:20, wave:0, maxWave:20,
-  towers:[], enemies:[], bullets:[], fx:[], units:[],
+  towers:[], enemies:[], bullets:[], fx:[], units:[], unsealed:new Set(),
   placing:null, selected:null,
   placingFree:false, placingLevel:0, gachaLock:false, gachaQueue:[],
   waveActive:false, spawnQueue:[], spawnTimer:0,
   auto:false, autoTimer:0, endless:false, diffIdx:0, runEarned:0,
   mod:{dmg:1,range:1,rate:1,income:1,uhp:1,reward:1}, modKey:0, perksTaken:[],
+  syn:{dmg:1,range:1,rate:1,income:1,uhp:1,reward:1}, affixes:[], affixT:0,
   skills:[{cd:0,max:45},{cd:0,max:60},{cd:0,max:90}], aiming:false,
   speed:1, paused:false, over:false,
   mouse:{x:-99,y:-99},
@@ -883,7 +1024,10 @@ function buildWave(n){
     rwMul  = Math.min(3, 1+(n-20)*0.05);    // 擊殺獎勵補償
   }
   if(G.daily){ hpMul*=G.daily.hpX||1; spdMul*=G.daily.spdX||1; rwMul*=G.daily.rwX||1; }
-  const push=(type,count,gap)=>{ for(let i=0;i<count;i++) q.push({type,gap,hpMul,spdMul,rwMul}); };
+  let cntX=1;
+  if(hasAffix('swarm')){ cntX=1.5; hpMul*=.8; }
+  if(hasAffix('rich')){ hpMul*=1.4; rwMul*=1.6; }
+  const push=(type,count,gap)=>{ count=Math.round(count*cntX); for(let i=0;i<count;i++) q.push({type,gap,hpMul,spdMul,rwMul}); };
   if(n%5===0){
     push('grunt', 6+n, .5);
     push('boss', Math.ceil(n/5), 2.5);
@@ -1111,6 +1255,51 @@ function buildDex(){
     grid.appendChild(card);
   }
 }
+const ENEMY_DEX=[
+  {k:'grunt', n:'標準兵', d:'最基本的入侵單位,數量最多。', c:'任何塔都能處理,群體塔效率最高。'},
+  {k:'fast',  n:'疾行兵', d:'移動速度極快,容易漏過防線。', c:'寒霜塔、重力塔減速,或用範圍塔覆蓋。'},
+  {k:'tank',  n:'重甲兵', d:'血量厚重、移動緩慢。', c:'毒疫塔的持續傷害與處刑塔的斬殺線。'},
+  {k:'boss',  n:'首領', d:'每 5 波登場,突破會扣 5 核心,且擁有衝刺/召喚/沉默其中一種技能。', c:'雷射、狙擊、飛彈集火;英雄塔是唯一能擋住它的單位。'},
+  {k:'stealth',n:'隱形兵', d:'半透明,多數塔無法鎖定。', c:'只有狙擊、雷射、電弧、風暴、處刑能偵測;範圍爆炸也能誤傷。'},
+  {k:'healer', n:'治療兵', d:'每 1.5 秒為周圍同伴回復 6% 血量。', c:'優先集火擊殺,或用範圍塔一起清掉。'},
+  {k:'splitter',n:'分裂兵', d:'死亡後裂成 2 隻加速小怪。', c:'用烈焰、風暴等範圍/連發塔一次清乾淨。'},
+  {k:'shield', n:'護盾兵', d:'免疫前 4 次攻擊傷害。', c:'戰輪塔、散射塔等高頻攻擊可快速破盾,毒疫的持續傷害也吃盾。'},
+  {k:'flyer',  n:'飛行兵', d:'無視路徑直線飛向核心,士兵擋不住、奇點拖不回。', c:'在核心附近佈署高射程塔(狙擊、雷射、飛彈)。'},
+];
+function buildEnemyDex(){
+  const grid=$('edexGrid'); grid.innerHTML='';
+  for(const e of ENEMY_DEX){
+    const base=ENEMY_TYPES[e.k]; if(!base)continue;
+    const card=document.createElement('div');
+    card.className='dexCard';
+    card.style.borderColor=base.color+'55';
+    card.innerHTML=`<div class="dh">
+        <span class="di" style="color:${base.color};text-shadow:0 0 8px ${base.color}">●</span>
+        <span class="dn" style="color:${base.color}">${e.n}</span>
+        <span class="dc" style="color:var(--dim)">HP ${base.hp}・速度 ${base.speed}・獎勵 ◈${base.reward}</span>
+      </div>
+      <div class="dd">${e.d}</div>
+      <div class="dexLv"><b>剋制</b>${e.c}</div>`;
+    grid.appendChild(card);
+  }
+}
+function openEdex(){
+  buildEnemyDex();
+  G._edexWasPaused=G.paused; G.paused=true;
+  $('edexModal').style.display='flex';
+}
+function closeEdex(){
+  $('edexModal').style.display='none';
+  if(!G.over){
+    G.paused=G._edexWasPaused||false;
+    $('pauseBtn').textContent=G.paused?'繼續':'暫停';
+    $('pauseBtn').classList.toggle('on',G.paused);
+  }
+}
+$('edexBtn').onclick=openEdex;
+$('edexClose').onclick=closeEdex;
+$('edexModal').addEventListener('click',ev=>{ if(ev.target.id==='edexModal') closeEdex(); });
+
 function openDex(){
   buildDex();
   G._dexWasPaused=G.paused; G.paused=true;
@@ -1124,6 +1313,7 @@ function closeDex(){
     $('pauseBtn').classList.toggle('on',G.paused);
   }
 }
+$('tutAgainBtn').onclick=()=>{ closeDex(); setTimeout(openTut,150); };
 $('dexBtn').onclick=openDex;
 $('dexClose').onclick=closeDex;
 $('dexModal').addEventListener('click',e=>{ if(e.target.id==='dexModal') closeDex(); });
@@ -1134,13 +1324,16 @@ function resetGame(idx){
   G.maxWave = G.daily? (G.daily.maxWave||15) : 20;
   G.money = (G.daily&&G.daily.money!=null)? G.daily.money : 200;
   G.lives = (G.daily&&G.daily.lives!=null)? G.daily.lives : 20;
-  G.towers=[]; G.enemies=[]; G.bullets=[]; G.fx=[]; G.units=[];
+  G.towers=[]; G.enemies=[]; G.bullets=[]; G.fx=[]; G.units=[]; G.unsealed=new Set();
   G.placing=null; G.selected=null; G.placingFree=false; G.placingLevel=0;
   G.gachaLock=false; G.gachaQueue=[]; G.gachaTier=null;
   G.waveActive=false; G.spawnQueue=[]; G.spawnTimer=0;
   G.autoTimer=G.auto?3:0; G.over=false; G.runEarned=0;
   G.mod={dmg:1,range:1,rate:1,income:1,uhp:1,reward:1}; G.modKey=0; G.perksTaken=[];
-  G.skills.forEach(k=>k.cd=0); G.aiming=false;
+  G.affixes=[]; G.affixT=0;
+  G.skills.forEach((k,i)=>{k.cd=0;k.max=[45,60,90][i];}); G.aiming=false;
+  applySynergies();
+  consumeBoosts();
   for(const t of G.towers){t._mk=0;t._ms=null;}
   $('overlay').style.display='none';
   $('startBtn').disabled=false; $('startBtn').textContent='▶ 開始波次';
@@ -1151,10 +1344,11 @@ function resetGame(idx){
 }
 function drawMapPreview(cvs,map){
   const c=cvs.getContext('2d');
-  const sx=cvs.width/768, sy=cvs.height/480;
+  const mc=map.cols||16, mr=map.rows||10;
+  const sx=cvs.width/(mc*CELL), sy=cvs.height/(mr*CELL);
   c.fillStyle='#0d1524'; c.fillRect(0,0,cvs.width,cvs.height);
   c.strokeStyle='rgba(57,214,255,.08)'; c.lineWidth=1;
-  for(let i=0;i<=COLS;i+=2){c.beginPath();c.moveTo(i*CELL*sx,0);c.lineTo(i*CELL*sx,cvs.height);c.stroke();}
+  for(let i=0;i<=mc;i+=2){c.beginPath();c.moveTo(i*CELL*sx,0);c.lineTo(i*CELL*sx,cvs.height);c.stroke();}
   c.strokeStyle='rgba(57,214,255,.12)'; c.lineWidth=13; c.lineCap='round'; c.lineJoin='round';
   const drawWp=()=>{ c.beginPath(); map.wp.forEach(([gc,gr],i)=>{
     const x=(gc*CELL+CELL/2)*sx, y=(gr*CELL+CELL/2)*sy;
@@ -1194,6 +1388,7 @@ function buildMaps(){
         desc.textContent='⚠ 目前進度將遺失,再點一次確認切換!';
         return;
       }
+      if(MAPS[i].hardOnly){ G.diffIdx=HARD_IDX; G.endless=false; applyDiffUI(); }
       resetGame(i);
       closeMaps();
     };
@@ -1250,12 +1445,25 @@ function toggleLoadout(key){
     if(META.loadout.length>=LOADOUT_MAX){toast('編隊已滿('+LOADOUT_MAX+' 座)');return;}
     META.loadout.push(key);
   }
-  saveMeta(); buildShop(); buildMeta();
+  saveMeta(); buildShop(); buildMeta(); applySynergies();
   if(G.placing && !G.placingFree && !META.loadout.includes(G.placing)){
     G.placing=null; showInfo();
   }
 }
+function renderSyn(){
+  const el=$('synBar'); if(!el)return;
+  const act=activeSynergies();
+  const src=META.loadout;
+  el.innerHTML='<b style="color:#ffd76a">🔗 羈絆</b> '+SYNERGIES.map(sy=>{
+    const on=act.includes(sy);
+    const need=sy.need.map(k=>TOWER_TYPES[k].icon).join('')
+      +(sy.any?'+('+sy.any.map(k=>TOWER_TYPES[k].icon).join('/')+')':'');
+    return `<span style="color:${on?'#5dff9d':'#5a6a8a'};margin-right:10px">
+      ${on?'✔':'○'}${sy.n}<span style="opacity:.7">(${need})</span></span>`;
+  }).join('')+(act.length?`<br><span style="color:var(--dim)">生效中:${act.map(a=>a.d).join('・')}</span>`:'');
+}
 function buildMeta(){
+  renderSyn(); renderBoosts();
   $('metaGemVal').textContent=META.gems;
   $('loadCnt').textContent=META.loadout.length;
   $('metaPullBtn').classList.toggle('poor', META.gems<META_PULL_COST);
@@ -1294,6 +1502,89 @@ function closeMeta(){
     $('pauseBtn').classList.toggle('on',G.paused);
   }
 }
+/* ================= 開場道具(星鑽購買,單場生效) ================= */
+const BOOSTS=[
+  {id:'money', n:'資金注入', d:'開局 +◈250', cost:25, ic:'💰'},
+  {id:'life',  n:'核心強化', d:'開局 +5 核心', cost:30, ic:'🛡'},
+  {id:'dmg',   n:'火力授權', d:'全場傷害 +15%', cost:45, ic:'🔥'},
+  {id:'skill', n:'技能預熱', d:'主動技能冷卻 -40%', cost:35, ic:'⚡'},
+];
+function boostCost(){ return (META.boosts||[]).reduce((s,id)=>s+(BOOSTS.find(b=>b.id===id)||{cost:0}).cost,0); }
+function toggleBoost(id){
+  META.boosts=META.boosts||[];
+  const i=META.boosts.indexOf(id);
+  if(i>=0)META.boosts.splice(i,1);
+  else{
+    const b=BOOSTS.find(x=>x.id===id);
+    if(META.gems<boostCost()+b.cost){toast('星鑽不足');return;}
+    META.boosts.push(id);
+  }
+  saveMeta(); renderBoosts();
+}
+function renderBoosts(){
+  const el=$('boostBar'); if(!el)return;
+  const sel=META.boosts||[];
+  el.innerHTML='<b style="color:#e8c3ff">🎒 開場道具</b>(下一場生效,開局扣款)'+
+    BOOSTS.map(b=>{
+      const on=sel.includes(b.id);
+      return `<span class="boostChip${on?' on':''}" data-b="${b.id}">${b.ic}${b.n} ✦${b.cost}</span>`;
+    }).join('')+
+    (sel.length?`<span style="color:var(--dim)">・合計 ✦${boostCost()}</span>`:'');
+  el.querySelectorAll('.boostChip').forEach(c=>c.onclick=()=>toggleBoost(c.dataset.b));
+}
+function consumeBoosts(){
+  const sel=META.boosts||[];
+  if(!sel.length)return;
+  const cost=boostCost();
+  if(META.gems<cost){ META.boosts=[]; saveMeta(); return; }
+  META.gems-=cost; META.boosts=[]; saveMeta();
+  const names=[];
+  for(const id of sel){
+    const b=BOOSTS.find(x=>x.id===id); if(!b)continue;
+    names.push(b.n);
+    if(id==='money')G.money+=250;
+    else if(id==='life')G.lives+=5;
+    else if(id==='dmg'){G.mod.dmg*=1.15;G.modKey++;}
+    else if(id==='skill')G.skills.forEach(k=>k.max=Math.round(k.max*.6));
+  }
+  updateHUD();
+  toast('🎒 道具生效:'+names.join('、'));
+}
+
+/* ================= 新手教學 ================= */
+const TUT=[
+  {t:'歡迎來到星域防線',b:'你是星域防線的指揮官,任務是<b>阻止敵人抵達核心</b>。<br>敵人會沿著發光的路徑從左方入侵,每隻突破防線都會扣掉核心值——<b>核心歸零就失敗了</b>。'},
+  {t:'第一步:部署砲塔',b:'右側(手機為右下 🏪 鈕)是商店。<br>點選一座塔 → 再<b>點擊地圖上的空格</b>就完成部署。<br>綠框代表可蓋、紅框代表不行(光路、廢墟或已有塔)。'},
+  {t:'善用地形',b:'地圖上有特殊格子:<br>▲ <b>高地</b>射程 +20%・◈ <b>能量節點</b>產能與攻速加成<br>✖ <b>廢墟</b>不可建塔・✦ <b>封印格</b>花 ◈120 解封後傷害 +25%<br>搶到好點位是勝負關鍵!'},
+  {t:'升級與進化',b:'點擊已建好的塔,可以<b>升級</b>(共三級)或<b>出售</b>回收 70%。<br>升到滿級後會出現<b>兩種進化分支</b>二選一,走向完全不同的強化路線。'},
+  {t:'開始戰鬥',b:'按頂欄的 <b>▶ 開始波次</b> 派出敵人。<br>擊殺敵人賺 ◈ 能源,每波結束還有獎金。<br>可開啟 <b>自動波次</b> 與 <b>×2/×3 加速</b> 讓節奏更快。'},
+  {t:'戰術資源',b:'左下角有三個<b>主動技能</b>:☄ 隕石轟炸(點技能再點地圖)、❄ 全場冰封、🔋 緊急能源。<br>每 5 波還會跳出 <b>🃏 三選一增益</b>,選擇本場的強化路線。'},
+  {t:'長期養成',b:'通關可獲得 <b>✦ 星鑽</b>(標準 50・困難 100・地獄 150・超難 250)。<br>到 <b>✦ 基地</b> 花 100 星鑽抽新塔永久解鎖,編隊最多帶 10 座,還能組出<b>羈絆加成</b>!<br><br>準備好了嗎?祝你好運,指揮官 🫡'},
+];
+let tutIdx=0;
+function showTut(){
+  const t=TUT[tutIdx];
+  $('tutStep').textContent='步驟 '+(tutIdx+1)+' / '+TUT.length;
+  $('tutTitle').textContent=t.t;
+  $('tutBody').innerHTML=t.b;
+  $('tutNext').textContent = tutIdx===TUT.length-1? '開始遊戲 ✔' : '下一步 ▶';
+}
+function openTut(){
+  tutIdx=0; showTut();
+  G._tutWasPaused=G.paused; G.paused=true;
+  $('tutOverlay').style.display='flex';
+}
+function closeTut(){
+  $('tutOverlay').style.display='none';
+  META.tutDone=true; saveMeta();
+  if(!G.over)G.paused=G._tutWasPaused||false;
+}
+$('tutNext').onclick=()=>{
+  if(tutIdx>=TUT.length-1){ closeTut(); SFX.up(); toast('教學完成!祝你好運 🫡'); return; }
+  tutIdx++; showTut();
+};
+$('tutSkip').onclick=closeTut;
+
 /* ================= 兌換碼系統 ================= */
 // 兌換碼以雜湊儲存,原始代碼不出現在程式內
 function codeHash(str){
@@ -1487,6 +1778,8 @@ function closeRank(){
   }
 }
 $('rankBtn').onclick=openRank;
+$('topRankBtn').onclick=openRank;
+$('rankRefresh').onclick=openRank;
 $('rankClose').onclick=closeRank;
 $('rankModal').addEventListener('click',e=>{ if(e.target.id==='rankModal') closeRank(); });
 
@@ -1621,16 +1914,12 @@ function renderSkills(){
 setInterval(renderSkills,300);
 
 /* ================= 每日挑戰 ================= */
-function seedRng(str){
-  let h=1779033703^str.length;
-  for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19;}
-  return function(){h=Math.imul(h^(h>>>16),2246822507);h=Math.imul(h^(h>>>13),3266489909);return ((h^=h>>>16)>>>0)/4294967296;}
-}
 const DAILY_REWARD=80;
 function buildDaily(){
   const date=new Date().toISOString().slice(0,10);
   const rng=seedRng('td-'+date);
-  const mapIdx=Math.floor(rng()*MAPS.length);
+  const normalMaps=MAPS.map((m,i)=>i).filter(i=>!MAPS[i].hardOnly);
+  const mapIdx=normalMaps[Math.floor(rng()*normalMaps.length)];
   const pool=Object.keys(TOWER_TYPES).filter(k=>!TOWER_TYPES[k].hidden);
   const loadout=[];
   while(loadout.length<5){
@@ -1689,8 +1978,7 @@ $('dailyGo').onclick=()=>{
   }else{
     const d=buildDaily();
     G.daily=d;
-    G.diffIdx=0; G.endless=false;
-    $('modeBtn').textContent='標準'; $('modeBtn').style.color=''; $('modeBtn').style.borderColor='';
+    G.diffIdx=0; G.endless=false; applyDiffUI();
     $('dailyBtn').textContent='📅 挑戰中';
     buildShop(); closeDaily(); G.paused=false; resetGame(d.mapIdx);
     toast('每日挑戰開始!'+MAPS[d.mapIdx].name);
@@ -1785,6 +2073,16 @@ cv.addEventListener('click',e=>{
   if(G.placing){
     if(pathCells.has(c+','+r)){toast('不能蓋在光路上');return;}
     if(G.towers.some(t=>t.c===c&&t.r===r)){toast('此處已有砲塔');return;}
+    const terr=terrainAt(c,r);
+    if(terr==='ruin'){toast('廢墟無法建塔');return;}
+    if(terr==='seal'&&!G.unsealed.has(c+','+r)){
+      if(G.money<120){toast('解封需 ◈120');return;}
+      G.money-=120; G.unsealed.add(c+','+r);
+      fxRing(c*CELL+CELL/2,r*CELL+CELL/2,'#c69bff',34);
+      SFX.up(); updateHUD();
+      toast('✦ 封印解除!可建塔並獲得 +25% 傷害');
+      return;
+    }
     const def=TOWER_TYPES[G.placing];
     const free=G.placingFree, lvl=G.placingLevel||0;
     if(!free){
@@ -1793,7 +2091,7 @@ cv.addEventListener('click',e=>{
     }
     // 抽到的塔:出售價值以原價計(高稀有度賺到)
     const spent=def.cost + (lvl>0? Math.round(def.cost*0.8):0);
-    G.towers.push({type:G.placing,c,r,x:c*CELL+CELL/2,y:r*CELL+CELL/2,level:lvl,cd:def.lv[lvl].interval||0,spent,angle:0});
+    G.towers.push({type:G.placing,c,r,x:c*CELL+CELL/2,y:r*CELL+CELL/2,level:lvl,cd:def.lv[lvl].interval||0,spent,angle:0,terr:terrainAt(c,r)});
     SFX.place();
     updateHUD(); saveRun();
     if(free){
@@ -1818,6 +2116,8 @@ cv.addEventListener('click',e=>{
   showInfo();
 });
 window.addEventListener('keydown',e=>{ if(e.key==='Escape'){
+  if($('tutOverlay').style.display==='flex'){return;}
+  if($('edexModal').style.display==='flex'){closeEdex();return;}
   if($('rankModal').style.display==='flex'){closeRank();return;}
   if($('achModal').style.display==='flex'){closeAch();return;}
   if($('dailyModal').style.display==='flex'){closeDaily();return;}
@@ -1859,6 +2159,7 @@ $('autoBtn').onclick=function(){
 let modePending=false;
 $('modeBtn').onclick=function(){
   if(G.daily){toast('每日挑戰進行中,請先離開挑戰');return;}
+  if(MAPS[curMapIdx].hardOnly){toast('☠ 深淵迷城僅能以超難模式挑戰');return;}
   const inProgress=G.wave>0||G.towers.length>0;
   if(inProgress && !modePending){
     modePending=true;
@@ -1870,9 +2171,7 @@ $('modeBtn').onclick=function(){
   G.diffIdx=(G.diffIdx+1)%DIFFS.length;
   const D=DIFFS[G.diffIdx];
   G.endless=D.endless;
-  this.textContent=D.name;
-  this.style.color=G.diffIdx?D.color:'';
-  this.style.borderColor=G.diffIdx?D.color:'';
+  applyDiffUI();
   toast('模式:'+D.name+(D.reward?'(通關 ✦'+D.reward+')':'(每波 ✦5)'));
   resetGame(curMapIdx);
 };
@@ -1897,7 +2196,7 @@ function spawnEnemy(spec){
     r:base.r, color:base.color,
     x:WAYPOINTS[0][0], y:WAYPOINTS[0][1], wp:1, slow:0, slowT:0, dead:false, t:Math.random()*7,
     stealth:base.stealth||false, healer:base.healer||false, split:base.split||false,
-    shield:base.shieldN||0, fly:base.fly||false, healT:1.5,
+    shield:(base.shieldN||0)+(hasAffix('shielded')?2:0), fly:base.fly||false, healT:1.5,
   };
   if(spec.type==='boss'){
     e.ability=['dash','summon','silence'][Math.floor(Math.random()*3)];
@@ -1907,6 +2206,17 @@ function spawnEnemy(spec){
 }
 
 function update(dt){
+  // 無盡詞綴:干擾力場
+  if(hasAffix('silence') && G.towers.length){
+    G.affixT-=dt;
+    if(G.affixT<=0){
+      G.affixT=12;
+      for(let i=0;i<3;i++){
+        const t=G.towers[Math.floor(Math.random()*G.towers.length)];
+        if(t)t.silence=2;
+      }
+    }
+  }
   // 主動技能冷卻
   for(const sk of G.skills) if(sk.cd>0) sk.cd-=dt;
   // 自動波次倒數
@@ -1933,6 +2243,8 @@ function update(dt){
   for(const e of G.enemies){
     e.t+=dt;
     if(e.dotT>0){ e.dotT-=dt; damage(e,(e.dotDps||0)*dt,e.dotSrc); if(e.dead)continue; }
+    if(hasAffix('nofreeze')){ e.slow=0; e.slowT=0; e.stun2=0; }
+    if(hasAffix('regen') && e.hp<e.maxHp) e.hp=Math.min(e.maxHp, e.hp+e.maxHp*.015*dt);
     if(e.slowT>0){e.slowT-=dt; if(e.slowT<=0)e.slow=0;}
     if(e.vulnT>0)e.vulnT-=dt;
     if(e.stun2>0){e.stun2-=dt; continue;} // 暈眩/凍結:停止移動
@@ -2296,6 +2608,7 @@ function update(dt){
       if(G.wave>=30)unlockAch('wave_30');
     }
     checkAchs(); saveMeta();
+    if(G.endless && G.wave>=20 && G.wave%10===0) setTimeout(rollAffix,900);
     const willEnd = !G.endless && G.wave>=G.maxWave;
     if(!willEnd && G.wave%5===0) setTimeout(offerPerks,600); // 每 5 波三選一
     if(!G.endless && G.wave>=G.maxWave){ endGame(true); }
@@ -2336,7 +2649,7 @@ function damage(e,d,src){
       }
     }
     SFX.kill();
-    G.money+=Math.round(e.reward*(G.mod.reward||1));
+    G.money+=Math.round(e.reward*(G.mod.reward||1)*((G.syn&&G.syn.reward)||1));
     if(e.bounty){ // 賞金標記
       G.money+=e.bounty;
       G.fx.push({kind:'text',x:e.x,y:e.y-14,text:'+'+e.bounty,color:'#ffab3d',life:.8,max:.8});
@@ -2461,14 +2774,35 @@ function draw(now){
 
   // 出入口
   const _cl=(v,a,b)=>Math.max(a,Math.min(b,v));
-  glowText('入侵口',_cl(WAYPOINTS[0][0]+34,30,738),_cl(WAYPOINTS[0][1]-16,14,466),'#ff5fa8');
-  glowText('核心',_cl(WAYPOINTS.at(-1)[0]-40,30,738),_cl(WAYPOINTS.at(-1)[1]-16,14,466),'#5dff9d');
+  glowText('入侵口',_cl(WAYPOINTS[0][0]+34,30,cv.width-30),_cl(WAYPOINTS[0][1]-16,14,cv.height-14),'#ff5fa8');
+  glowText('核心',_cl(WAYPOINTS.at(-1)[0]-40,30,cv.width-30),_cl(WAYPOINTS.at(-1)[1]-16,14,cv.height-14),'#5dff9d');
+
+  // 地形機關
+  for(const [key,type] of terrain){
+    const [tc,tr]=key.split(',').map(Number);
+    const T=TERRAIN[type];
+    const x=tc*CELL, y=tr*CELL;
+    const unsealed = type==='seal' && G.unsealed.has(key);
+    ctx.fillStyle = type==='ruin'? 'rgba(90,106,138,.13)' : T.c+'14';
+    ctx.fillRect(x+2,y+2,CELL-4,CELL-4);
+    ctx.strokeStyle = unsealed? '#c69bff88' : T.c+'44';
+    ctx.lineWidth=1;
+    ctx.setLineDash(type==='seal'&&!unsealed?[3,3]:[]);
+    ctx.strokeRect(x+2.5,y+2.5,CELL-5,CELL-5);
+    ctx.setLineDash([]);
+    ctx.fillStyle=T.c+(unsealed?'99':'66');
+    ctx.font='12px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(unsealed?'✧':T.ic, x+CELL/2, y+CELL/2);
+  }
 
   // 部署預覽
   if(G.placing && G.mouse.x>=0){
     const c=Math.floor(G.mouse.x/CELL), r=Math.floor(G.mouse.y/CELL);
     if(c>=0&&c<COLS&&r>=0&&r<ROWS){
-      const ok=!pathCells.has(c+','+r)&&!G.towers.some(t=>t.c===c&&t.r===r);
+      const tr2=terrainAt(c,r);
+      const sealedLock = tr2==='seal'&&!G.unsealed.has(c+','+r);
+      const ok=!pathCells.has(c+','+r)&&!G.towers.some(t=>t.c===c&&t.r===r)
+        &&tr2!=='ruin'&&!sealedLock;
       const x=c*CELL+CELL/2,y=r*CELL+CELL/2;
       const def=TOWER_TYPES[G.placing];
       ctx.fillStyle=ok?'rgba(93,255,157,.15)':'rgba(255,61,61,.18)';
@@ -2676,6 +3010,15 @@ function draw(now){
     }
   }
 
+  // 無盡詞綴列表
+  if(G.affixes.length){
+    ctx.textAlign='left';ctx.font='700 11px sans-serif';
+    G.affixes.forEach((a,i)=>{
+      ctx.fillStyle=a.c;
+      ctx.fillText('☠ '+a.n, 8, 16+i*15);
+    });
+  }
+
   if(G.paused && !G.over){
     ctx.fillStyle='rgba(5,8,16,.55)';
     ctx.fillRect(0,0,cv.width,cv.height);
@@ -2716,7 +3059,7 @@ function saveRun(){
       wave: G.waveActive? G.wave-1 : G.wave, // 波次進行中則回溯到該波開始前
       money:G.money, lives:G.lives, runEarned:G.runEarned,
       auto:G.auto, speed:G.speed, daily:G.daily||null,
-      mod:G.mod, modKey:G.modKey, perksTaken:G.perksTaken,
+      mod:G.mod, modKey:G.modKey, perksTaken:G.perksTaken, affixes:G.affixes,
       skcd:G.skills.map(k=>Math.ceil(k.cd)),
       towers:G.towers.map(t=>({type:t.type,c:t.c,r:t.r,level:t.level,
         evoIdx:(t.evoIdx!=null?t.evoIdx:null),spent:t.spent,
@@ -2744,6 +3087,7 @@ function loadRun(){
     G.auto=!!r.auto; G.speed=[1,2,3].includes(r.speed)?r.speed:1;
     if(r.mod){ G.mod={dmg:1,range:1,rate:1,income:1,uhp:1,reward:1,...r.mod}; G.modKey=r.modKey||0; G.perksTaken=r.perksTaken||[]; }
     if(Array.isArray(r.skcd)) G.skills.forEach((k,i)=>k.cd=r.skcd[i]||0);
+    if(Array.isArray(r.affixes)) G.affixes=r.affixes.filter(a=>a&&a.id);
     G.towers=r.towers.filter(d=>TOWER_TYPES[d.type]).map(d=>{
       const t={type:d.type,c:d.c,r:d.r,x:d.c*CELL+CELL/2,y:d.r*CELL+CELL/2,
         level:Math.min(d.level||0,2),cd:0,spent:d.spent||TOWER_TYPES[d.type].cost,
@@ -2753,10 +3097,7 @@ function loadRun(){
       return t;
     });
     // 同步 UI 狀態
-    const D=DIFFS[G.diffIdx];
-    $('modeBtn').textContent=D.name;
-    $('modeBtn').style.color=G.diffIdx?D.color:'';
-    $('modeBtn').style.borderColor=G.diffIdx?D.color:'';
+    applyDiffUI();
     $('autoBtn').classList.toggle('on',G.auto);
     $('speedBtn').textContent='速度 ×'+G.speed;
     $('speedBtn').classList.toggle('on',G.speed>1);
@@ -2778,11 +3119,11 @@ function fitCanvas(){
     // 手機「直向」:畫布滿寬,等比高度
     const w=st.clientWidth;
     cv.style.width=w+'px';
-    cv.style.height=Math.floor(w*480/768)+'px';
+    cv.style.height=Math.floor(w*cv.height/cv.width)+'px';
   }else{
-    const scale=Math.min(st.clientWidth/768, st.clientHeight/480);
-    cv.style.width=Math.floor(768*scale)+'px';
-    cv.style.height=Math.floor(480*scale)+'px';
+    const scale=Math.min(st.clientWidth/cv.width, st.clientHeight/cv.height);
+    cv.style.width=Math.floor(cv.width*scale)+'px';
+    cv.style.height=Math.floor(cv.height*scale)+'px';
   }
 }
 window.addEventListener('resize',fitCanvas);
@@ -2836,6 +3177,7 @@ function loop(now){
 }
 updateHUD();
 fitCanvas();
+if(!META.tutDone) setTimeout(openTut,500);
 if(loadRun()){
   setTimeout(()=>toast('📂 已載入上次進度:第 '+G.wave+' 波・'+MAPS[curMapIdx].name),400);
 }
